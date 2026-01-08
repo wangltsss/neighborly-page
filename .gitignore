@@ -1,0 +1,26 @@
+# --- Mac/Windows System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Node.js / React Native / CDK ---
+node_modules/
+dist/
+.env
+.env.local
+.expo/
+web-build/
+
+# --- Java / Maven / Gradle ---
+target/
+build/
+*.class
+*.jar
+*.war
+.gradle/
+.idea/
+*.iml
+.vscode/
+
+# --- AWS CDK Specific ---
+cdk.out/
+test-reports/
