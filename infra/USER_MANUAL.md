@@ -1,30 +1,5 @@
 # Neighborly Infrastructure User Manual
 
-## Development Philosophy
-
-### Documentation-Driven Development
-
-This project follows documentation-driven development (DDD):
-
-1. **Write documentation first**: If using AI to implement features, first document the architecture and API contracts
-2. **Documentation as specification**: Documentation serves as the guidelines for AI. Humans ensures the AI output aligns with the demand with their judgement.
-3. **Keep docs synchronized**: When documentation/code changes, update the other accordingly.
-4. **Review documentation**: PRs must include documentation updates for new features
-
-Best practices:
-
-- Refer to `.context/ECE651 - Neighborly.md` for technical design decisions. However, they are not rigid. Use your judgement to make changes.
-- Define API schemas before implementation
-- Update architecture diagrams when infrastructure changes
-- Document configuration options
-
-### Code Standards
-
-- **TypeScript strict mode**: All code must pass strict type checking
-- **No magic values**: Use environment variables for environment-specific values, and never upload sensitive information to version control.
-- **Explicit error handling**: Validate inputs and provide clear error messages
-- **Comments for context**: Explain why, not what (code should be self-documenting)
-
 ## AWS Initial Setup
 
 ### 1. Create AWS Account
@@ -33,8 +8,7 @@ If you don't have an AWS account:
 
 1. Go to https://aws.amazon.com/
 2. Click "Create an AWS Account"
-3. Follow signup process (requires credit card, but won't charge for free tier usage)
-4. Complete email verification
+3. Follow signup process
 
 ### 2. Create IAM User (Do NOT use root account)
 
@@ -116,15 +90,6 @@ Output should show your IAM user (not root):
   "Arn": "arn:aws:iam::123456789012:user/<your-user-name>"
 }
 ```
-
-### 9. (Optional) Secure Root Account
-
-After creating IAM user, secure your root account:
-
-1. AWS Console → Top-right username → Security credentials
-2. Under **Multi-factor authentication (MFA)**, click **Activate MFA**
-3. Select **Virtual MFA device** (use Google Authenticator or Authy)
-4. Follow setup instructions
 
 ## CDK Setup
 
@@ -220,27 +185,71 @@ This creates:
 
 ### 3. Deploy Infrastructure
 
+**New Architecture (Feature-Based):**
+
+The infrastructure is organized into 3 stacks:
+
+- `{YourName}-AuthStack` - Authentication (Cognito + Users table + AppSync API + S3)
+- `{YourName}-MessagingStack` - Messaging data (Messages + Channels tables)
+- `{YourName}-BuildingStack` - Building data (Buildings table)
+
+**NOTE**: {YourName} is the value of `DEVELOPER_NAME` in `.env`. You should first configure it to your name before deploying.
+**Deploy all stacks:**
+
 ```bash
-cdk deploy --all
+# Option 1: Use deploy script (recommended)
+cd scripts
+./deploy-all.sh
+
+# Option 2: Use CDK directly
+cd infra
+cdk deploy --all --require-approval never
+```
+
+**Deploy individual stacks:**
+
+```bash
+cd scripts
+
+# Deploy auth first (contains API + S3)
+./deploy-auth.sh
+
+# Deploy data stacks (can be in any order)
+./deploy-messaging.sh
+./deploy-building.sh
 ```
 
 CDK will:
 
 1. Show summary of changes
-2. Ask for confirmation (type `y`)
-3. Create resources in AWS
-4. Display outputs (API endpoints, etc.)
-
-First deployment takes 5-10 minutes.
+2. Create resources in AWS
+3. Display outputs (API endpoints, etc.)
 
 ### 4. Update Infrastructure
 
 After modifying CDK code:
 
 ```bash
+cd infra
 npm run build
 cdk diff        # Review changes
-cdk deploy --all
+cd ../scripts
+./deploy-all.sh # Or deploy specific stack
+```
+
+### 5. Stack Information
+
+List deployed stacks:
+
+```bash
+cd infra
+cdk list
+```
+
+Check stack status:
+
+```bash
+aws cloudformation describe-stacks --stack-name {YourName}-AuthStack
 ```
 
 ## AWS CLI Reference
@@ -383,3 +392,28 @@ cdk destroy --all
 - AWS CDK Documentation: https://docs.aws.amazon.com/cdk/
 - Technical Design: `.context/ECE651 - Neighborly.md`
 - Project README: `../README.md`
+
+## Development Philosophy
+
+### Documentation-Driven Development
+
+This project follows documentation-driven development (DDD):
+
+1. **Write documentation first**: If using AI to implement features, first document the architecture and API contracts
+2. **Documentation as specification**: Documentation serves as the guidelines for AI. Humans ensures the AI output aligns with the demand with their judgement.
+3. **Keep docs synchronized**: When documentation/code changes, update the other accordingly.
+4. **Review documentation**: PRs must include documentation updates for new features
+
+Best practices:
+
+- Refer to `.context/ECE651 - Neighborly.md` for technical design decisions. However, they are not rigid. Use your judgement to make changes.
+- Define API schemas before implementation
+- Update architecture diagrams when infrastructure changes
+- Document configuration options
+
+### Code Standards
+
+- **TypeScript strict mode**: All code must pass strict type checking
+- **No magic values**: Use environment variables for environment-specific values, and never upload sensitive information to version control.
+- **Explicit error handling**: Validate inputs and provide clear error messages
+- **Comments for context**: Explain why, not what (code should be self-documenting)
