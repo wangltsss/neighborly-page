@@ -160,7 +160,8 @@ messagesDataSource.createResolver('ListMessagesResolver', {
   typeName: 'Query',
   fieldName: 'listMessages',
   requestMappingTemplate: appsync.MappingTemplate.dynamoDbQuery(
-    appsync.KeyCondition.eq('channelId', 'channelId')
+    appsync.KeyCondition.eq('channelId', 'channelId'),
+    'sentTime'
   ),
   responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList(),
 });
@@ -174,7 +175,7 @@ messagesDataSource.createResolver('CreateMessageResolver', {
       "operation": "PutItem",
       "key": {
         "channelId": $util.dynamodb.toDynamoDBJson($ctx.args.channelId),
-        "timestamp": $util.dynamodb.toDynamoDBJson($util.time.nowEpochMilliSeconds())
+        "sentTime": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
       },
       "attributeValues": {
         "messageId": $util.dynamodb.toDynamoDBJson($util.autoId()),

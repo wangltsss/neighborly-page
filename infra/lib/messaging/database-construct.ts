@@ -50,8 +50,8 @@ export class MessagingDatabaseConstruct extends Construct {
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: {
-        name: 'timestamp',
-        type: dynamodb.AttributeType.NUMBER,
+        name: 'sentTime',
+        type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -66,8 +66,8 @@ export class MessagingDatabaseConstruct extends Construct {
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: {
-        name: 'timestamp',
-        type: dynamodb.AttributeType.NUMBER,
+        name: 'sentTime',
+        type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL,
     });

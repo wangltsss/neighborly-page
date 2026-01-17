@@ -159,7 +159,7 @@ export class AuthStack extends Construct {
                 userId: { S: userId },
                 email: { S: email },
                 joinedBuildings: { L: [] },
-                createdAt: { S: new Date().toISOString() }
+                createdTime: { S: new Date().toISOString() }
               }
             }));
             
