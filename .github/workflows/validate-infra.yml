@@ -1,0 +1,71 @@
+name: Validate Infrastructure
+
+on: # triggering event
+  pull_request: # PR event
+    branches: [main] # only run on main branch
+  push: # push event
+    branches: [main]
+
+jobs: # jobs to run
+  validate: # job ID (customized by user)
+    name: Validate CDK Infrastructure
+    runs-on: ubuntu-latest # running env
+
+    steps: # steps to run
+      - name: Checkout code
+        uses: actions/checkout@v3 #uses action (fixed version)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with: # parameters
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: "./infra/package-lock.json"
+
+      - name: Install dependencies
+        working-directory: ./infra
+        run: npm ci # the command to execute
+
+      - name: TypeScript compile
+        working-directory: ./infra
+        run: npm run build
+
+      - name: Validate GraphQL schema
+        working-directory: ./infra
+        run: | # multiline command
+          echo "Checking GraphQL schema exists..."
+          if [ ! -f "lib/graphql/schema.graphql" ]; then
+            echo "ERROR: schema.graphql not found"
+            exit 1
+          fi
+          echo "GraphQL schema found"
+
+      - name: CDK synthesize and validate
+        working-directory: ./infra
+        # mock environment variables to work with CDK synth
+        env:
+          AWS_ACCOUNT_ID: "123456789012"
+          AWS_REGION: "us-east-1"
+          DEVELOPER_NAME: "ci"
+        run: |
+          echo "Running CDK synth..."
+          npx cdk synth
+          echo "CDK synth successful"
+
+      - name: Verify .env.template completeness
+        working-directory: ./infra
+        run: |
+          echo "Checking .env.template..."
+          REQUIRED_VARS=("AWS_ACCOUNT_ID" "AWS_REGION" "DEVELOPER_NAME")
+
+          for VAR in "${REQUIRED_VARS[@]}"; do
+            if ! grep -E "^$VAR=.*" .env.template 2>/dev/null; then
+              echo "ERROR: Missing required variable $VAR in .env.template"
+              exit 1
+            fi
+          done
+
+          echo ".env.template is complete"
+      - name: Summary
+        if: success()
+        run: echo "All validation checks passed"

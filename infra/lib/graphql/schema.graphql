@@ -1,0 +1,65 @@
+# GraphQL schema for Neighborly API
+
+type Building {
+  buildingId: ID!
+  address: String!
+  name: String
+  memberCount: Int!
+  createdTime: AWSDateTime!
+}
+
+type Channel {
+  channelId: ID!
+  buildingId: ID!
+  name: String!
+  description: String
+  createdTime: AWSDateTime!
+}
+
+type Message {
+  messageId: ID!
+  channelId: ID!
+  userId: ID!
+  content: String!
+  mediaUrl: String
+  sentTime: AWSDateTime!
+}
+
+type User {
+  userId: ID!
+  email: AWSEmail!
+  username: String
+  joinedBuildings: [ID!]
+  createdTime: AWSDateTime!
+}
+
+type Query {
+  getBuilding(buildingId: ID!): Building
+  searchBuildings(address: String!): [Building!]
+  listChannels(buildingId: ID!): [Channel!]
+  listMessages(channelId: ID!, limit: Int, nextToken: String): MessageConnection
+  getUser(userId: ID!): User
+}
+
+type MessageConnection {
+  items: [Message!]
+  nextToken: String
+}
+
+type Mutation {
+  joinBuilding(buildingId: ID!): Building
+  createChannel(buildingId: ID!, name: String!, description: String): Channel
+  createMessage(channelId: ID!, content: String!, mediaUrl: String): Message
+  updateLastRead(channelId: ID!, sentTime: AWSDateTime!): Boolean
+}
+
+type Subscription {
+  onMessageCreated(channelId: ID!): Message
+    @aws_subscribe(mutations: ["createMessage"])
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

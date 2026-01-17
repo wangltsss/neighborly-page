@@ -6,7 +6,8 @@ Thumbs.db
 node_modules/
 dist/
 .env
-.env.local
+.env.*
+!.env.template
 .expo/
 web-build/
 
@@ -24,3 +25,5 @@ build/
 # --- AWS CDK Specific ---
 cdk.out/
 test-reports/
+*.js
+*.d.ts
