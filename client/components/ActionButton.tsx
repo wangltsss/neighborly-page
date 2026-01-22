@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
-import type { ReactNode } from 'react';
+import { actionButtonStyle } from '@/constants/NativeWindStyles';
 
 // Define props interface for the ActionButton
 export interface ActionButtonProps {
     label: string;
-    icon: ReactNode;
     variant?: 'primary' | 'secondary' | 'danger';
     disabled?: boolean;
     onPress: () => void;
@@ -14,35 +13,27 @@ export interface ActionButtonProps {
 // Helper component for the buttons
 export const ActionButton: React.FC<ActionButtonProps> = ({
     label,
-    icon,
     variant = 'primary',
     disabled = false,
     onPress
 }) => {
-    // Base styles
-    const baseContainerStyle = "flex-row items-center gap-3 px-6 py-4 rounded-xl w-full sm:w-64 justify-start border";
-
-    // Style configurations
+    // Style configurations mapped from global styles
     const variantStyles = {
         primary: {
-            container: "bg-indigo-600 border-transparent active:bg-indigo-700",
-            text: "text-white",
-            icon: "text-white"
+            container: actionButtonStyle.primaryContainer,
+            text: actionButtonStyle.primaryText
         },
         secondary: {
-            container: "bg-slate-100 border-transparent active:bg-slate-200",
-            text: "text-slate-700",
-            icon: "text-slate-700"
+            container: actionButtonStyle.secondaryContainer,
+            text: actionButtonStyle.secondaryText
         },
         danger: {
-            container: "bg-white border-transparent active:bg-red-50",
-            text: "text-red-500",
-            icon: "text-red-500"
+            container: actionButtonStyle.dangerContainer,
+            text: actionButtonStyle.dangerText
         },
         disabled: {
-            container: "bg-slate-100 border-transparent opacity-50",
-            text: "text-slate-400",
-            icon: "text-slate-400"
+            container: actionButtonStyle.disabledContainer,
+            text: actionButtonStyle.disabledText
         }
     };
 
@@ -52,12 +43,9 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         <Pressable
             onPress={onPress}
             disabled={disabled}
-            className={`${baseContainerStyle} ${currentVariant.container}`}
+            className={`${actionButtonStyle.base} ${currentVariant.container}`}
         >
-            <View className={`w-6 items-center justify-center ${currentVariant.icon}`}>
-                {icon}
-            </View>
-            <Text className={`font-semibold text-base ${currentVariant.text}`}>
+            <Text className={`${actionButtonStyle.labelText} ${currentVariant.text}`}>
                 {label}
             </Text>
         </Pressable>
