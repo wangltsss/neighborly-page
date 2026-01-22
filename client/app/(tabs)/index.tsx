@@ -1,5 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { LogOut, PlusCircle, MinusCircle } from 'lucide-react-native';
 
 import { ActionButton } from '@/components/ActionButton';
 import { BuildingCard } from '@/components/BuildingCard';
@@ -16,12 +17,14 @@ export default function HomeScreen() {
 
         <ActionButton
           label="Join an Apartment"
+          icon={<PlusCircle size={24} color="white" />}
           variant="primary"
           onPress={() => router.push('/search')}
         />
 
         <ActionButton
           label="Leave Apartment"
+          icon={<MinusCircle size={24} color="#334155" />}
           variant="secondary"
           disabled={true}
           onPress={() => alert("Opening Leave Apartment Modal...")}
@@ -29,6 +32,7 @@ export default function HomeScreen() {
 
         <ActionButton
           label="Log out"
+          icon={<LogOut size={24} color="#ef4444" />}
           variant="danger"
           onPress={() => alert("Logging out...")}
         />
