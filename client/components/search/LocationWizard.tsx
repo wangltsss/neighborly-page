@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
-import { SelectBox } from '@/components/SelectBox';
+import { SelectBox } from '@/components/common/SelectBox';
+// TODO: add a loading state for the component to tell users that data is loading
 import { LOCATIONS } from '@/assets/mockdata/CommunityData';
 import { searchStyles } from '@/constants/NativeWindStyles';
 

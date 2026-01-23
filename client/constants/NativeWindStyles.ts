@@ -33,6 +33,35 @@ export const actionButtonStyle = {
     disabledIcon: "text-slate-400",
 };
 
+export const selectBoxStyles = {
+    container: "mb-5 w-full",
+    label: "text-sm font-semibold text-slate-700 mb-2",
+    pickerBase: `${common.rowCenter} px-4 py-3.5 border rounded-xl`,
+    pickerActive: "bg-white border-slate-300",
+    pickerDisabled: "bg-slate-100 border-slate-200",
+    textBase: "flex-1",
+    textActive: "text-slate-900",
+    textDisabled: "text-slate-400",
+    modalOverlay: "flex-1 bg-black/50 justify-end",
+    modalContent: "bg-white rounded-t-2xl p-4 max-h-[70%]",
+    modalTitle: `${common.textHeader} text-lg mb-4`,
+    optionItem: "py-3 px-4 border-b border-slate-100 active:bg-slate-50",
+    optionTextSelected: "font-bold text-indigo-600",
+    optionTextNormal: "text-slate-900",
+    cancelButton: "mt-4 py-3 px-4 bg-slate-100 rounded-xl",
+    cancelText: "text-center font-semibold text-slate-700",
+};
+
+export const buildingCardStyles = {
+    card: `${common.card} rounded-2xl items-center w-80`,
+    imageContainer: "w-20 h-20 rounded-full mb-3 items-center justify-center overflow-hidden",
+    imagePlaceholder: "w-full h-full bg-black/5",
+    name: `${common.textHeader} text-center mb-1 text-base`,
+    location: `${common.textSub} text-xs text-center mb-4`,
+    button: "bg-indigo-600 w-full py-2.5 rounded-lg items-center active:bg-indigo-700",
+    buttonText: "text-white font-semibold text-sm",
+};
+
 
 // ---------- Page styles ----------
 export const homeStyles = {
@@ -85,6 +114,6 @@ export const buildingSearchStyles = {
     emptyStateIcon: "w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4",
     emptyStateTitle: `${common.textHeader} font-medium mb-1`,
     emptyStateDescription: "text-slate-500 text-sm max-w-[220px] text-center leading-relaxed",
-    createLink: "mt-6",
-    createLinkText: "text-indigo-600 font-semibold text-sm underline",
+    // createLink: "mt-6",
+    // createLinkText: "text-indigo-600 font-semibold text-sm underline",
 };

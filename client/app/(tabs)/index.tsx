@@ -2,8 +2,8 @@ import { ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { LogOut, PlusCircle, MinusCircle } from 'lucide-react-native';
 
-import { ActionButton } from '@/components/ActionButton';
-import { BuildingCard } from '@/components/BuildingCard';
+import { ActionButton } from '@/components/common/ActionButton';
+import { BuildingCard } from '@/components/home/BuildingCard';
 import { MOCK_BUILDINGS } from '@/assets/mockdata/CommunityData';
 import { homeStyles } from '@/constants/NativeWindStyles';
 
@@ -45,11 +45,6 @@ export default function HomeScreen() {
         className={homeStyles.scrollView}
       >
         <View className={homeStyles.contentContainer}>
-
-          {/* Header */}
-          <Text className={homeStyles.headerTitle}>
-            Your Community
-          </Text>
 
           {/* Building Grid */}
           <View className={homeStyles.gridContainer}>
