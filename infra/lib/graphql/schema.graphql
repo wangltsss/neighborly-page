@@ -45,6 +45,7 @@ type Query {
     nextToken: String
   ): MessageConnection @aws_api_key @aws_cognito_user_pools
   getUser(userId: ID!): User @aws_api_key @aws_cognito_user_pools
+  getUsersByIds(userIds: [ID!]!): [User] @aws_api_key @aws_cognito_user_pools
 }
 
 type MessageConnection @aws_api_key @aws_cognito_user_pools {

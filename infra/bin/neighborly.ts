@@ -152,6 +152,17 @@ usersDataSource.createResolver('GetUserResolver', {
   responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
 });
 
+usersDataSource.createResolver('GetUsersByIdsResolver', {
+  typeName: 'Query',
+  fieldName: 'getUsersByIds',
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.getUsersByIds.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.getUsersByIds.res.vtl')
+  ),
+});
+
 // Building resolvers
 buildingsDataSource.createResolver('GetBuildingResolver', {
   typeName: 'Query',
