@@ -16,10 +16,7 @@ interface AvatarProps {
  * @param size - Avatar diameter in pixels (default: 40)
  */
 export default function Avatar({ username, size = 40 }: AvatarProps) {
-  // Extract first letter (uppercase)
   const initial = username?.charAt(0).toUpperCase() || '?';
-  
-  // Generate consistent color from username
   const backgroundColor = stringToColor(username || '');
   
   return (
