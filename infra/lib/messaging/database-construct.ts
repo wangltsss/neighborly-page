@@ -59,18 +59,22 @@ export class MessagingDatabaseConstruct extends Construct {
     });
 
     // GSI for querying messages by user
-    this.messagesTable.addGlobalSecondaryIndex({
-      indexName: 'UserMessagesIndex',
-      partitionKey: {
-        name: 'userId',
-        type: dynamodb.AttributeType.STRING,
-      },
-      sortKey: {
-        name: 'sentTime',
-        type: dynamodb.AttributeType.STRING,
-      },
-      projectionType: dynamodb.ProjectionType.ALL,
-    });
+    // COMMENTED OUT: Conflicts with API_KEY authentication
+    // API_KEY auth has no userId ($ctx.identity.sub is null)
+    // This causes "Type mismatch for Index Key userId" error
+    // Uncomment when switching to Cognito User Pool authentication
+    // this.messagesTable.addGlobalSecondaryIndex({
+    //   indexName: 'UserMessagesIndex',
+    //   partitionKey: {
+    //     name: 'userId',
+    //     type: dynamodb.AttributeType.STRING,
+    //   },
+    //   sortKey: {
+    //     name: 'sentTime',
+    //     type: dynamodb.AttributeType.STRING,
+    //   },
+    //   projectionType: dynamodb.ProjectionType.ALL,
+    // });
 
     // Outputs
     new cdk.CfnOutput(this, 'ChannelsTableName', {
