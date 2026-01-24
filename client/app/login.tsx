@@ -1,37 +1,53 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Spacing, BorderRadius, FontSize, AppColors, Shadow, Layout } from '@/constants/Theme';
+import { signIn } from '@/services/authService';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Cleanup on unmount (example of lifecycle management)
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
-      // Cleanup logic here (e.g., cancel pending network requests)
-      setIsLoading(false);
+      isMountedRef.current = false;
     };
   }, []);
 
   const handleSignIn = async () => {
+    setError(null);
     setIsLoading(true);
 
     try {
-      // TODO: Implement authentication logic with AWS Cognito
-      console.log('Sign in with:', email, password);
+      const result = await signIn(email, password);
 
-      // Simulate async operation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) return;
 
-    } catch (error) {
-      console.error('Login failed:', error);
+      if (result.success) {
+        console.log('Sign in successful, userId:', result.userId);
+        // TODO: Navigate to home screen after successful login
+        // TODO: Store auth state in context/global state
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      if (!isMountedRef.current) return;
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Login error:', err);
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -49,6 +65,13 @@ export default function LoginScreen() {
         {/* Header */}
         <Text style={styles.title}>Neighborly</Text>
         <Text style={styles.subtitle}>Connect with your community</Text>
+
+        {/* Error Message */}
+        {error && (
+          <View style={styles.errorContainer} lightColor={AppColors.white} darkColor={AppColors.darkCard}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         {/* Email Input */}
         <Input
@@ -117,6 +140,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
     textAlign: 'center',
     opacity: 0.7,
+  },
+  errorContainer: {
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: '#FEE2E2',
+    borderRadius: BorderRadius.md,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: FontSize.sm,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',
