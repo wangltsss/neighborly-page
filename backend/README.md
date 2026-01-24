@@ -5,7 +5,7 @@ Lambda functions for Neighborly API.
 ## Technology Stack
 
 - Runtime: Java 17
-- Build: Maven
+- Build: Gradle
 - Deployment: AWS Lambda
 
 ## Structure
@@ -19,4 +19,4 @@ backend/
 
 ## Development
 
-Coming soon.
+See [TODO.md](TODO.md) for implementation plan.
