@@ -73,6 +73,15 @@ const api = new appsync.GraphqlApi(authCdkStack, 'Api', {
         userPool: auth.userPool,
       },
     },
+    // Additional auth mode for testing without login
+    additionalAuthorizationModes: [
+      {
+        authorizationType: appsync.AuthorizationType.API_KEY,
+        apiKeyConfig: {
+          expires: cdk.Expiration.after(cdk.Duration.days(365)),
+        },
+      },
+    ],
   },
   logConfig: {
     fieldLogLevel: appsync.FieldLogLevel.ERROR,
@@ -126,6 +135,11 @@ const messagesDataSource = api.addDynamoDbDataSource(
   messaging.database.messagesTable
 );
 
+const userChannelStateDataSource = api.addDynamoDbDataSource(
+  'UserChannelStateDataSource',
+  messaging.userChannelState.table
+);
+
 // ============================================
 // RESOLVERS - All created here
 // ============================================
@@ -159,33 +173,33 @@ channelsDataSource.createResolver('ListChannelsResolver', {
 messagesDataSource.createResolver('ListMessagesResolver', {
   typeName: 'Query',
   fieldName: 'listMessages',
-  requestMappingTemplate: appsync.MappingTemplate.dynamoDbQuery(
-    appsync.KeyCondition.eq('channelId', 'channelId'),
-    'sentTime'
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.listMessages.req.vtl')
   ),
-  responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultList(),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.listMessages.res.vtl')
+  ),
 });
 
 messagesDataSource.createResolver('CreateMessageResolver', {
   typeName: 'Mutation',
   fieldName: 'createMessage',
-  requestMappingTemplate: appsync.MappingTemplate.fromString(`
-    {
-      "version": "2017-02-28",
-      "operation": "PutItem",
-      "key": {
-        "channelId": $util.dynamodb.toDynamoDBJson($ctx.args.channelId),
-        "sentTime": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
-      },
-      "attributeValues": {
-        "messageId": $util.dynamodb.toDynamoDBJson($util.autoId()),
-        "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
-        "content": $util.dynamodb.toDynamoDBJson($ctx.args.content),
-        "mediaUrl": $util.dynamodb.toDynamoDBJson($ctx.args.mediaUrl)
-      }
-    }
-  `),
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.createMessage.req.vtl')
+  ),
   responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
+});
+
+// Read state resolver
+userChannelStateDataSource.createResolver('UpdateLastReadResolver', {
+  typeName: 'Mutation',
+  fieldName: 'updateLastRead',
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.updateLastRead.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.updateLastRead.res.vtl')
+  ),
 });
 
 // ============================================
@@ -200,6 +214,12 @@ new cdk.CfnOutput(authCdkStack, 'ApiUrl', {
 new cdk.CfnOutput(authCdkStack, 'ApiId', {
   value: api.apiId,
   description: 'AppSync API ID',
+});
+
+new cdk.CfnOutput(authCdkStack, 'ApiKey', {
+  value: api.apiKey || 'N/A',
+  description: 'AppSync API Key (for testing)',
+  exportName: `${neighborlyConfig.resourcePrefix}-api-key`,
 });
 
 new cdk.CfnOutput(authCdkStack, 'MediaBucketName', {
