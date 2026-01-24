@@ -42,10 +42,15 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     }
   };
 
+  // Keep track of step in a ref to access inside listener without re-binding
+  const stepRef = React.useRef(step);
+  useEffect(() => { stepRef.current = step; }, [step]);
+
   // Intercept Back Navigation for Wizard Step
   useEffect(() => {
     const handleBeforeRemove = (e: any) => {
-      if (step === 2) {
+      // Access the current step value from the ref
+      if (stepRef.current === 2) {
         // Prevent default behavior (leaving the screen)
         e.preventDefault();
         // Go back to step 1
@@ -64,7 +69,7 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     return () => {
       unsubscribe();
     };
-  }, [navigation, step, onBack]);
+  }, [navigation, onBack]); // Listener is now stable across step changes
 
   // --- FILTER LOGIC ---
   const filteredBuildings = MOCK_BUILDINGS.filter(b => {
