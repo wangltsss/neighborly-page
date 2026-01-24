@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
@@ -7,6 +8,7 @@ import { Spacing, BorderRadius, FontSize, AppColors, Shadow, Layout } from '@/co
 import { signIn } from '@/services/authService';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -52,8 +54,7 @@ export default function LoginScreen() {
   };
 
   const handleSignUp = () => {
-    // TODO: Navigate to signup screen when implemented
-    console.log('Navigate to sign up');
+    router.push('/signup');
   };
 
   return (

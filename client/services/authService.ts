@@ -90,6 +90,12 @@ export function signUp(email: string, password: string): Promise<SignUpResult> {
       [],
       (error, result: ISignUpResult | undefined) => {
         if (error) {
+          console.error('Cognito signUp error:', {
+            name: error.name,
+            message: error.message,
+            code: (error as any).code,
+            fullError: error,
+          });
           resolve({
             success: false,
             message: getErrorMessage(error),
