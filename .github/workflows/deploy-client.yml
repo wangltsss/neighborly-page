@@ -2,7 +2,7 @@ name: Deploy Client to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, draft/login-frontend]
     paths:
       - 'client/**'
   workflow_dispatch: # Allow manual trigger
@@ -39,7 +39,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           personal_token: ${{ secrets.DEPLOY_TOKEN }}
-          external_repository: ${{ github.repository_owner }}/neighborly-app
+          external_repository: ${{ github.repository_owner }}/neighborly-page
           publish_branch: main
           publish_dir: ./client/dist
           user_name: 'github-actions[bot]'
