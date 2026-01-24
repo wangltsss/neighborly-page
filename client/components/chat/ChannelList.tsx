@@ -3,6 +3,7 @@ import { View, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native
 import { useQuery } from '@apollo/client';
 import { useRouter } from 'expo-router';
 import { LIST_CHANNELS } from '@/lib/graphql/queries';
+import BuildingCard from './BuildingCard';
 
 /**
  * Channel item type
@@ -64,6 +65,9 @@ export default function ChannelList({
 
   return (
     <View style={styles.container}>
+      {/* Building info card */}
+      <BuildingCard buildingId={buildingId} />
+      
       <Text style={styles.header}>Channels</Text>
       <FlatList
         data={channels}
