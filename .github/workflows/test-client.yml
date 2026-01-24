@@ -1,0 +1,47 @@
+name: Test Client
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'client/**'
+  push:
+    branches: [main]
+    paths:
+      - 'client/**'
+
+jobs:
+  test:
+    name: Run Client Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './client/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ./client
+        run: npm test -- --ci --coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: coverage-report
+          path: ./client/coverage/
+          retention-days: 7
+
+      - name: Summary
+        if: success()
+        run: echo "All client tests passed"
