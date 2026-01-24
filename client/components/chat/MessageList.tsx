@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, ScrollView, Text, StyleSheet } from 'react-native';
 import { useQuery } from '@apollo/client';
-import { LIST_MESSAGES } from '@/lib/graphql/queries';
+import { LIST_MESSAGES, GET_USERS_BY_IDS } from '@/lib/graphql/queries';
+import Avatar from './Avatar';
 
 /**
  * Message item type
@@ -47,8 +48,42 @@ export default function MessageList({ channelId }: MessageListProps) {
     pollInterval: 5000, // Poll every 5 seconds as temp solution for real-time
   });
 
-  // oldest appear first (backend returns newest-first)
+  // Reverse messages so oldest appear first
   const messages: Message[] = [...(data?.listMessages?.items || [])].reverse();
+
+  // IDs should be unique
+  const userIds = useMemo(() => {
+    return Array.from(new Set(messages.map(m => m.userId)));
+  }, [messages]);
+
+  // Fetch for all unique user IDs
+  const { data: usersData } = useQuery<{
+    getUsersByIds: Array<{
+      userId: string;
+      username?: string;
+      email: string;
+    }>;
+  }>(GET_USERS_BY_IDS, {
+    variables: { userIds },
+    skip: userIds.length === 0,
+  });
+
+  // Create user ID to user map for quick lookup
+  const userMap = useMemo(() => {
+    const map = new Map<string, { username?: string; email: string }>();
+    usersData?.getUsersByIds?.forEach(user => {
+      map.set(user.userId, { username: user.username, email: user.email });
+    });
+    return map;
+  }, [usersData]);
+
+  // Get display name with fallback chain
+  const getDisplayName = (userId: string): string => {
+    const user = userMap.get(userId);
+    if (user?.username) return user.username;
+    if (user?.email) return user.email.split('@')[0];
+    return userId.substring(0, 8);
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -90,10 +125,13 @@ export default function MessageList({ channelId }: MessageListProps) {
       {messages.map((message) => (
         <View key={message.messageId} style={styles.messageItem}>
           <View style={styles.messageHeader}>
-            <Text style={styles.userId}>{message.userId.substring(0, 8)}...</Text>
-            <Text style={styles.timestamp}>
-              {new Date(message.sentTime).toLocaleString()}
-            </Text>
+            <Avatar username={getDisplayName(message.userId)} size={32} />
+            <View style={styles.userInfo}>
+              <Text style={styles.userId}>{getDisplayName(message.userId)}</Text>
+              <Text style={styles.timestamp}>
+                {new Date(message.sentTime).toLocaleString()}
+              </Text>
+            </View>
           </View>
           <Text style={styles.messageContent}>{message.content}</Text>
           {message.mediaUrl && (
@@ -129,8 +167,12 @@ const styles = StyleSheet.create({
   },
   messageHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
+  },
+  userInfo: {
+    flex: 1,
   },
   userId: {
     fontSize: 12,

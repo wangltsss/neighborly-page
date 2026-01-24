@@ -50,3 +50,13 @@ export const GET_USER = gql`
     }
   }
 `;
+
+export const GET_USERS_BY_IDS = gql`
+  query GetUsersByIds($userIds: [ID!]!) {
+    getUsersByIds(userIds: $userIds) {
+      userId
+      email
+      username
+    }
+  }
+`;
