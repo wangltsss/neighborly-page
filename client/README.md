@@ -33,6 +33,8 @@ client/
 ├── constants/                    # App constants (colors, config, etc.)
 ├── assets/                       # Images, fonts, and other static files
 ├── babel.config.js               # Babel configuration (transpiler)
+├── metro.config.js               # Metro configuration (packager)
+├── nativewind-env.d.ts           # NativeWind configuration (generated)
 ├── tailwind.config.js            # TailwindCSS configuration
 ├── tsconfig.json                 # TypeScript configuration
 └── package.json                  # Dependencies and scripts
