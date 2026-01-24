@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet } from 'react-native';
 
 interface ChatHeaderProps {
   channelName: string;
@@ -12,17 +11,8 @@ interface ChatHeaderProps {
  * Displays channel name and description at top of message area
  */
 export default function ChatHeader({ channelName, channelDescription }: ChatHeaderProps) {
-  const router = useRouter();
-
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => router.push('/')}
-      >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
-      
       <View style={styles.channelInfo}>
         <Text style={styles.channelName}># {channelName}</Text>
         {channelDescription && (
@@ -42,15 +32,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     backgroundColor: 'white',
-  },
-  backButton: {
-    paddingRight: 16,
-    paddingVertical: 4,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: '#1976d2',
-    fontWeight: '600',
   },
   channelInfo: {
     flex: 1,

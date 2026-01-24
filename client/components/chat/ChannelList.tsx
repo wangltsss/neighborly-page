@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@apollo/client';
+import { useRouter } from 'expo-router';
 import { LIST_CHANNELS } from '@/lib/graphql/queries';
 
 /**
@@ -35,6 +36,8 @@ export default function ChannelList({
   activeChannelId, 
   onChannelSelect 
 }: ChannelListProps) {
+  const router = useRouter();
+  
   const { data, loading, error } = useQuery<{
     listChannels: Channel[];
   }>(LIST_CHANNELS, {
@@ -85,6 +88,14 @@ export default function ChannelList({
           </TouchableOpacity>
         )}
       />
+      
+      {/* Back button footer */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.push('/')}
+      >
+        <Text style={styles.backButtonText}>Back to Home</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -132,5 +143,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#d32f2f',
     textAlign: 'center',
+  },
+  backButton: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#1976d2',
+    borderRadius: 8,
+    alignItems: 'center' as const,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600' as const,
   },
 });
