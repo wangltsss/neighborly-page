@@ -4,7 +4,7 @@ React Native Web app for Neighborly community platform.
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm or yarn
 
 ## Installation
