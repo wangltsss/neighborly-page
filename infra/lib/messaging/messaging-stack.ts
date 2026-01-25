@@ -2,6 +2,7 @@ import { Construct } from 'constructs';
 import { NeighborlyConfig } from '../config';
 import { MessagingDatabaseConstruct } from './database-construct';
 import { MessagingLambdasConstruct } from './lambdas-construct';
+import { UserChannelStateConstruct } from './user-channel-state-construct';
 
 /**
  * Props for Messaging Stack
@@ -21,6 +22,7 @@ export interface MessagingStackProps {
  */
 export class MessagingStack extends Construct {
   public readonly database: MessagingDatabaseConstruct;
+  public readonly userChannelState: UserChannelStateConstruct;
   public readonly lambdas: MessagingLambdasConstruct;
 
   constructor(scope: Construct, id: string, props: MessagingStackProps) {
@@ -30,6 +32,11 @@ export class MessagingStack extends Construct {
 
     // Database tables
     this.database = new MessagingDatabaseConstruct(this, 'Database', {
+      config,
+    });
+
+    // User channel read state
+    this.userChannelState = new UserChannelStateConstruct(this, 'UserChannelState', {
       config,
     });
 

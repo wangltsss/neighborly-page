@@ -26,5 +26,6 @@ coverage/
 # --- AWS CDK Specific ---
 cdk.out/
 test-reports/
-*.js
-*.d.ts
+# *.js
+/infra/**/*.js
+/infra/**/*.d.ts
