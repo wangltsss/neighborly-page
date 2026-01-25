@@ -1,0 +1,12 @@
+{
+  "version": "2017-02-28",
+  "operation": "PutItem",
+  "key": {
+    "userChannelId": $util.dynamodb.toDynamoDBJson("$ctx.identity.sub" + "_" + "$ctx.args.channelId")
+  },
+  "attributeValues": {
+    "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub),
+    "channelId": $util.dynamodb.toDynamoDBJson($ctx.args.channelId),
+    "lastReadTime": $util.dynamodb.toDynamoDBJson($ctx.args.lastReadTime)
+  }
+}

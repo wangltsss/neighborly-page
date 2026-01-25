@@ -1,6 +1,6 @@
 # GraphQL schema for Neighborly API
 
-type Building {
+type Building @aws_api_key @aws_cognito_user_pools {
   buildingId: ID!
   address: String!
   name: String
@@ -8,7 +8,7 @@ type Building {
   createdTime: AWSDateTime!
 }
 
-type Channel {
+type Channel @aws_api_key @aws_cognito_user_pools {
   channelId: ID!
   buildingId: ID!
   name: String!
@@ -16,7 +16,7 @@ type Channel {
   createdTime: AWSDateTime!
 }
 
-type Message {
+type Message @aws_api_key @aws_cognito_user_pools {
   messageId: ID!
   channelId: ID!
   userId: ID!
@@ -25,7 +25,7 @@ type Message {
   sentTime: AWSDateTime!
 }
 
-type User {
+type User @aws_api_key @aws_cognito_user_pools {
   userId: ID!
   email: AWSEmail!
   username: String
@@ -34,23 +34,36 @@ type User {
 }
 
 type Query {
-  getBuilding(buildingId: ID!): Building
+  getBuilding(buildingId: ID!): Building @aws_api_key @aws_cognito_user_pools
   searchBuildings(address: String!): [Building!]
-  listChannels(buildingId: ID!): [Channel!]
-  listMessages(channelId: ID!, limit: Int, nextToken: String): MessageConnection
-  getUser(userId: ID!): User
+    @aws_api_key
+    @aws_cognito_user_pools
+  listChannels(buildingId: ID!): [Channel!] @aws_api_key @aws_cognito_user_pools
+  listMessages(
+    channelId: ID!
+    limit: Int
+    nextToken: String
+  ): MessageConnection @aws_api_key @aws_cognito_user_pools
+  getUser(userId: ID!): User @aws_api_key @aws_cognito_user_pools
+  getUsersByIds(userIds: [ID!]!): [User] @aws_api_key @aws_cognito_user_pools
 }
 
-type MessageConnection {
+type MessageConnection @aws_api_key @aws_cognito_user_pools {
   items: [Message!]
   nextToken: String
 }
 
 type Mutation {
-  joinBuilding(buildingId: ID!): Building
+  joinBuilding(buildingId: ID!): Building @aws_api_key @aws_cognito_user_pools
   createChannel(buildingId: ID!, name: String!, description: String): Channel
+    @aws_api_key
+    @aws_cognito_user_pools
   createMessage(channelId: ID!, content: String!, mediaUrl: String): Message
-  updateLastRead(channelId: ID!, sentTime: AWSDateTime!): Boolean
+    @aws_api_key
+    @aws_cognito_user_pools
+  updateLastRead(channelId: ID!, lastReadTime: AWSDateTime!): Boolean
+    @aws_api_key
+    @aws_cognito_user_pools
 }
 
 type Subscription {
