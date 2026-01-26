@@ -58,7 +58,7 @@ export class AuthStack extends Construct {
         requireLowercase: true,
         requireUppercase: true,
         requireDigits: true,
-        requireSymbols: false,
+        requireSymbols: true,
       },
 
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
