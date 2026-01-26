@@ -3,7 +3,7 @@ import { Button, View } from 'react-native';
 import { Stack, useNavigation } from 'expo-router';
 import { LocationWizard } from '@/components/search/LocationWizard';
 import { BuildingSearch } from '@/components/search/BuildingSearch';
-import { MOCK_BUILDINGS } from '@/assets/mockdata/CommunityData';
+import { buildingService, Building } from '@/services/building.service';
 import { searchStyles } from '@/constants/NativeWindStyles';
 
 interface BuildingDiscoveryProps {
@@ -23,6 +23,9 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
 
   // State for Search (Step 2)
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   // --- HANDLERS ---
   const handleCountryChange = (value: string) => {
@@ -36,9 +39,23 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     setSelectedCity('');
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (selectedCountry && selectedProvince && selectedCity) {
-      setStep(2);
+      setLoading(true);
+      setError('');
+      try {
+        // Fetch buildings for selected location
+        const results = await buildingService.searchBuildings({
+          city: selectedCity,
+          state: selectedProvince, // Note: frontend uses "province" but backend uses "state"
+        });
+        setBuildings(results);
+        setStep(2);
+      } catch (err) {
+        setError('Failed to load buildings. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -72,16 +89,12 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
   }, [navigation, onBack]); // Listener is now stable across step changes
 
   // --- FILTER LOGIC ---
-  const filteredBuildings = MOCK_BUILDINGS.filter(b => {
-    const matchesLocation =
-      (!selectedProvince || b.province === selectedProvince) &&
-      (!selectedCity || b.city === selectedCity);
-
+  const filteredBuildings = buildings.filter(b => {
     const matchesQuery =
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      searchQuery === '' ||
+      b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.address.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesLocation && matchesQuery;
+    return matchesQuery;
   });
 
   return (

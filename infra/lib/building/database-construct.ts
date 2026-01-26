@@ -36,11 +36,15 @@ export class BuildingDatabaseConstruct extends Construct {
       pointInTimeRecovery: false,
     });
 
-    // GSI for searching buildings by address
+    // GSI for searching buildings by location (city + state)
     this.buildingsTable.addGlobalSecondaryIndex({
-      indexName: 'AddressIndex',
+      indexName: 'LocationIndex',
       partitionKey: {
-        name: 'address',
+        name: 'city',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'state',
         type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL,

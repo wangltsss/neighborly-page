@@ -1,0 +1,28 @@
+{
+  "version": "2018-05-29",
+  "operation": "Query",
+  "index": "LocationIndex",
+  "query": {
+    "expression": "#city = :city AND #state = :state",
+    "expressionNames": {
+      "#city": "city",
+      "#state": "state"
+    },
+    "expressionValues": {
+      ":city": $util.dynamodb.toDynamoDBJson($ctx.args.city),
+      ":state": $util.dynamodb.toDynamoDBJson($ctx.args.state)
+    }
+  },
+  #if($ctx.args.addressFilter)
+  "filter": {
+    "expression": "contains(#address, :filter) OR contains(#name, :filter)",
+    "expressionNames": {
+      "#address": "address",
+      "#name": "name"
+    },
+    "expressionValues": {
+      ":filter": $util.dynamodb.toDynamoDBJson($ctx.args.addressFilter)
+    }
+  }
+  #end
+}

@@ -171,6 +171,18 @@ buildingsDataSource.createResolver('GetBuildingResolver', {
   responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
 });
 
+// Search buildings by location
+buildingsDataSource.createResolver('SearchBuildingsResolver', {
+  typeName: 'Query',
+  fieldName: 'searchBuildings',
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.searchBuildings.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.searchBuildings.res.vtl')
+  ),
+});
+
 channelsDataSource.createResolver('ListChannelsResolver', {
   typeName: 'Query',
   fieldName: 'listChannels',

@@ -72,16 +72,39 @@ const TEST_DATA = {
   
   buildings: [
     {
+      country: 'Canada',
+      state: 'ON',
+      city: 'Waterloo',
       address: '200 University Ave W, Waterloo, ON',
       name: 'Waterloo Central Tower',
     },
     {
+      country: 'Canada',
+      state: 'ON',
+      city: 'Waterloo',
       address: '100 Regina St S, Waterloo, ON',
       name: 'Regina Plaza',
     },
     {
+      country: 'Canada',
+      state: 'ON',
+      city: 'Waterloo',
       address: '75 King St S, Waterloo, ON',
       name: 'King Street Residences',
+    },
+    {
+      country: 'Canada',
+      state: 'ON',
+      city: 'Toronto',
+      address: '200 Queens Quay W, Toronto, ON',
+      name: 'The Harbourfront Lofts',
+    },
+    {
+      country: 'Canada',
+      state: 'ON',
+      city: 'Toronto',
+      address: '80 East Liberty St, Toronto, ON',
+      name: 'Liberty Village Condos',
     },
   ],
   
@@ -262,6 +285,9 @@ async function createUsers(): Promise<UserData[]> {
 
 interface BuildingData {
   buildingId: string;
+  country: string;
+  state: string;
+  city: string;
   address: string;
   name: string;
 }
@@ -278,6 +304,9 @@ async function createBuildings(): Promise<BuildingData[]> {
         TableName: CONFIG.tables.buildings,
         Item: marshall({
           buildingId,
+          country: buildingData.country,
+          state: buildingData.state,
+          city: buildingData.city,
           address: buildingData.address,
           name: buildingData.name,
           memberCount: 0,
@@ -286,7 +315,14 @@ async function createBuildings(): Promise<BuildingData[]> {
       })
     );
 
-    buildings.push({ buildingId, address: buildingData.address, name: buildingData.name });
+    buildings.push({ 
+      buildingId, 
+      country: buildingData.country,
+      state: buildingData.state,
+      city: buildingData.city,
+      address: buildingData.address, 
+      name: buildingData.name 
+    });
     console.log(`Created building: ${buildingData.name}`);
   }
 

@@ -1,16 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, TextInput, FlatList } from 'react-native';
 import { Search, MapPin, Users, CheckCircle2, Building2, ArrowRight } from 'lucide-react-native';
+import { Building } from '@/services/building.service';
 import { buildingSearchStyles } from '@/constants/NativeWindStyles';
-
-interface Building {
-    id: string;
-    name: string;
-    address: string;
-    residents: number;
-    verified: boolean;
-    imageColor: string;
-}
 
 interface BuildingSearchProps {
     selectedCity: string;
@@ -64,7 +56,7 @@ export const BuildingSearch: React.FC<BuildingSearchProps> = ({
             <FlatList
                 className={buildingSearchStyles.resultsScroll}
                 data={filteredBuildings}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.buildingId}
                 ListHeaderComponent={
                     <View className={buildingSearchStyles.resultsHeader}>
                         <Text className={buildingSearchStyles.resultsTitle}>
@@ -90,22 +82,18 @@ export const BuildingSearch: React.FC<BuildingSearchProps> = ({
                 }
                 renderItem={({ item: building }) => (
                     <Pressable
-                        // TODO: Implement join functionality
-                        onPress={() => onJoin ? onJoin(building.id) : alert(`Selected: ${building.name}`)}
+                        onPress={() => onJoin ? onJoin(building.buildingId) : alert(`Selected: ${building.name}`)}
                         className={buildingSearchStyles.cardContainer}
                     >
-                        <View className={`${buildingSearchStyles.cardImagePlaceholder} ${building.imageColor}`}>
+                        <View className={`${buildingSearchStyles.cardImagePlaceholder} bg-indigo-100`}>
                             <Building2 size={24} color="#475569" opacity={0.7} />
                         </View>
 
                         <View className={buildingSearchStyles.cardContent}>
                             <View className={buildingSearchStyles.cardRow}>
                                 <Text className={buildingSearchStyles.cardTitle} numberOfLines={1}>
-                                    {building.name}
+                                    {building.name || 'Unnamed Building'}
                                 </Text>
-                                {building.verified && (
-                                    <CheckCircle2 size={14} color="#3b82f6" />
-                                )}
                             </View>
 
                             <View className={buildingSearchStyles.cardMetaRow}>
@@ -118,7 +106,7 @@ export const BuildingSearch: React.FC<BuildingSearchProps> = ({
                             <View className={buildingSearchStyles.cardMetaRow}>
                                 <Users size={12} color="#94a3b8" />
                                 <Text className={buildingSearchStyles.cardMetaText}>
-                                    {building.residents} neighbors
+                                    {building.memberCount} neighbors
                                 </Text>
                             </View>
                         </View>
