@@ -3,18 +3,38 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import LoginScreen from '../app/login';
 import * as authService from '../services/authService';
 
-// Mock expo-router
+// Mock expo-router - provides navigation functionality
+const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
+    push: mockPush,
+    replace: mockReplace,
   }),
 }));
 
-// Mock authService
+// Mock authService - simulates Cognito authentication without actual network calls
 jest.mock('../services/authService', () => ({
   signIn: jest.fn(),
 }));
+
+// Mock Toast component - prevents actual toast rendering during tests
+const mockShowToast = jest.fn();
+jest.mock('../components/Toast', () => ({
+  useToast: () => ({
+    showToast: mockShowToast,
+  }),
+}));
+
+// Helper function to fill login form - reduces repetitive code
+const fillLoginForm = (
+  { getByPlaceholderText }: ReturnType<typeof render>,
+  email: string,
+  password: string
+) => {
+  fireEvent.changeText(getByPlaceholderText('you@example.com'), email);
+  fireEvent.changeText(getByPlaceholderText('Enter your password'), password);
+};
 
 describe('LoginScreen', () => {
   beforeEach(() => {
@@ -126,6 +146,84 @@ describe('LoginScreen', () => {
 
     await waitFor(() => {
       expect(getByText('An unexpected error occurred. Please try again.')).toBeTruthy();
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('shows error when email is empty', async () => {
+      const renderResult = render(<LoginScreen />);
+
+      fillLoginForm(renderResult, '', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign In'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Email is required.')).toBeTruthy();
+      });
+      expect(authService.signIn).not.toHaveBeenCalled();
+    });
+
+    it('shows error when password is empty', async () => {
+      const renderResult = render(<LoginScreen />);
+
+      fillLoginForm(renderResult, 'test@example.com', '');
+      fireEvent.press(renderResult.getByText('Sign In'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Password is required.')).toBeTruthy();
+      });
+      expect(authService.signIn).not.toHaveBeenCalled();
+    });
+
+    it('shows error when email format is invalid', async () => {
+      const renderResult = render(<LoginScreen />);
+
+      fillLoginForm(renderResult, 'invalid-email', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign In'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Please enter a valid email address.')).toBeTruthy();
+      });
+      expect(authService.signIn).not.toHaveBeenCalled();
+    });
+
+    it('prevents multiple rapid submissions while loading', async () => {
+      const mockSignIn = authService.signIn as jest.Mock;
+      // Simulate slow network request
+      mockSignIn.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 500))
+      );
+
+      const renderResult = render(<LoginScreen />);
+      fillLoginForm(renderResult, 'test@example.com', 'Password123!');
+
+      // Press sign in multiple times rapidly
+      fireEvent.press(renderResult.getByText('Sign In'));
+      fireEvent.press(renderResult.getByText('Signing In...'));
+      fireEvent.press(renderResult.getByText('Signing In...'));
+
+      await waitFor(() => {
+        // Should only be called once despite multiple presses
+        expect(mockSignIn).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('shows toast and redirects on successful login', async () => {
+      const mockSignIn = authService.signIn as jest.Mock;
+      mockSignIn.mockResolvedValue({ success: true, userId: 'user-123' });
+
+      const renderResult = render(<LoginScreen />);
+      fillLoginForm(renderResult, 'test@example.com', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign In'));
+
+      await waitFor(() => {
+        expect(mockShowToast).toHaveBeenCalledWith('Login successful! Redirecting...', 'success');
+      });
+    });
+
+    it('navigates to signup when Sign Up link is pressed', () => {
+      const { getByText } = render(<LoginScreen />);
+      fireEvent.press(getByText('Sign Up'));
+      expect(mockPush).toHaveBeenCalledWith('/signup');
     });
   });
 });

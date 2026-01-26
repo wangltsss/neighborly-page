@@ -3,7 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import SignupScreen from '../app/signup';
 import * as authService from '../services/authService';
 
-// Mock expo-router
+// Mock expo-router - provides navigation functionality for signup flow
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
@@ -13,12 +13,24 @@ jest.mock('expo-router', () => ({
   }),
 }));
 
-// Mock authService
+// Mock authService - simulates Cognito signup/verification without actual network calls
 jest.mock('../services/authService', () => ({
   signUp: jest.fn(),
   confirmSignUp: jest.fn(),
   resendConfirmationCode: jest.fn(),
 }));
+
+// Helper function to fill signup form - reduces repetitive code across tests
+const fillSignUpForm = (
+  { getByPlaceholderText }: ReturnType<typeof render>,
+  email: string,
+  password: string,
+  confirmPassword: string
+) => {
+  fireEvent.changeText(getByPlaceholderText('you@example.com'), email);
+  fireEvent.changeText(getByPlaceholderText('Enter your password'), password);
+  fireEvent.changeText(getByPlaceholderText('Re-enter your password'), confirmPassword);
+};
 
 describe('SignupScreen', () => {
   beforeEach(() => {
@@ -256,6 +268,148 @@ describe('SignupScreen', () => {
       await waitFor(() => {
         expect(mockResend).toHaveBeenCalledWith('test@example.com');
       });
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('shows error when email is empty', async () => {
+      const renderResult = render(<SignupScreen />);
+
+      fillSignUpForm(renderResult, '', 'Password123!', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Email is required.')).toBeTruthy();
+      });
+      expect(authService.signUp).not.toHaveBeenCalled();
+    });
+
+    it('shows error when password is empty', async () => {
+      const renderResult = render(<SignupScreen />);
+
+      fillSignUpForm(renderResult, 'test@example.com', '', '');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Password is required.')).toBeTruthy();
+      });
+      expect(authService.signUp).not.toHaveBeenCalled();
+    });
+
+    it('shows error when confirm password is empty', async () => {
+      const renderResult = render(<SignupScreen />);
+
+      fillSignUpForm(renderResult, 'test@example.com', 'Password123!', '');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Please confirm your password.')).toBeTruthy();
+      });
+      expect(authService.signUp).not.toHaveBeenCalled();
+    });
+
+    it('shows error when email format is invalid', async () => {
+      const renderResult = render(<SignupScreen />);
+
+      fillSignUpForm(renderResult, 'invalid-email', 'Password123!', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Please enter a valid email address.')).toBeTruthy();
+      });
+      expect(authService.signUp).not.toHaveBeenCalled();
+    });
+
+    it('prevents multiple rapid submissions while loading', async () => {
+      const mockSignUp = authService.signUp as jest.Mock;
+      // Simulate slow network request
+      mockSignUp.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 500))
+      );
+
+      const renderResult = render(<SignupScreen />);
+      fillSignUpForm(renderResult, 'test@example.com', 'Password123!', 'Password123!');
+
+      // Press sign up multiple times rapidly
+      fireEvent.press(renderResult.getByText('Sign Up'));
+      fireEvent.press(renderResult.getByText('Creating Account...'));
+      fireEvent.press(renderResult.getByText('Creating Account...'));
+
+      await waitFor(() => {
+        // Should only be called once despite multiple presses
+        expect(mockSignUp).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it('handles network failure during signup', async () => {
+      const mockSignUp = authService.signUp as jest.Mock;
+      mockSignUp.mockRejectedValue(new Error('Network error'));
+
+      const renderResult = render(<SignupScreen />);
+      fillSignUpForm(renderResult, 'test@example.com', 'Password123!', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      await waitFor(() => {
+        expect(renderResult.getByText('An unexpected error occurred. Please try again.')).toBeTruthy();
+      });
+    });
+
+    it('handles network failure during verification', async () => {
+      const mockSignUp = authService.signUp as jest.Mock;
+      const mockConfirmSignUp = authService.confirmSignUp as jest.Mock;
+      mockSignUp.mockResolvedValue({ success: true });
+      mockConfirmSignUp.mockRejectedValue(new Error('Network error'));
+
+      const renderResult = render(<SignupScreen />);
+      fillSignUpForm(renderResult, 'test@example.com', 'Password123!', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      // Wait for verification step
+      await waitFor(() => {
+        renderResult.getByPlaceholderText('Enter 6-digit code');
+      });
+
+      fireEvent.changeText(renderResult.getByPlaceholderText('Enter 6-digit code'), '123456');
+      const verifyElements = renderResult.getAllByText('Verify Email');
+      fireEvent.press(verifyElements[1]);
+
+      await waitFor(() => {
+        expect(renderResult.getByText('An unexpected error occurred. Please try again.')).toBeTruthy();
+      });
+    });
+
+    it('redirects to login after successful verification', async () => {
+      jest.useFakeTimers();
+      const mockSignUp = authService.signUp as jest.Mock;
+      const mockConfirmSignUp = authService.confirmSignUp as jest.Mock;
+      mockSignUp.mockResolvedValue({ success: true });
+      mockConfirmSignUp.mockResolvedValue({ success: true });
+
+      const renderResult = render(<SignupScreen />);
+      fillSignUpForm(renderResult, 'test@example.com', 'Password123!', 'Password123!');
+      fireEvent.press(renderResult.getByText('Sign Up'));
+
+      // Wait for verification step
+      await waitFor(() => {
+        renderResult.getByPlaceholderText('Enter 6-digit code');
+      });
+
+      fireEvent.changeText(renderResult.getByPlaceholderText('Enter 6-digit code'), '123456');
+      const verifyElements = renderResult.getAllByText('Verify Email');
+      fireEvent.press(verifyElements[1]);
+
+      await waitFor(() => {
+        expect(renderResult.getByText('Email verified! Redirecting to login...')).toBeTruthy();
+      });
+
+      // Fast-forward timer for redirect
+      jest.advanceTimersByTime(1500);
+
+      await waitFor(() => {
+        expect(mockReplace).toHaveBeenCalledWith('/login');
+      });
+
+      jest.useRealTimers();
     });
   });
 });
