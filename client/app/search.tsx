@@ -4,6 +4,10 @@ import { Stack, useNavigation } from 'expo-router';
 import { LocationWizard } from '@/components/search/LocationWizard';
 import { BuildingSearch } from '@/components/search/BuildingSearch';
 import { buildingService, Building } from '@/services/building.service';
+import { apolloClient } from '@/lib/apollo-client';
+import { JOIN_BUILDING } from '@/lib/graphql/mutations';
+import { ConfirmJoinDialog } from '@/components/search/ConfirmJoinDialog';
+import { SuccessDialog } from '@/components/common/SuccessDialog';
 import { searchStyles } from '@/constants/NativeWindStyles';
 
 interface BuildingDiscoveryProps {
@@ -26,6 +30,12 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  // Dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // --- HANDLERS ---
   const handleCountryChange = (value: string) => {
@@ -57,6 +67,63 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
         setLoading(false);
       }
     }
+  };
+
+  const handleJoinBuilding = (buildingId: string) => {
+    // Find the selected building
+    const building = buildings.find(b => b.buildingId === buildingId);
+    if (!building) return;
+
+    // Show custom confirmation dialog
+    setSelectedBuilding(building);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmJoin = async () => {
+    if (!selectedBuilding) return;
+
+    setLoading(true);
+    try {
+      // Call joinBuilding mutation and wait for response
+      await apolloClient.mutate({
+        mutation: JOIN_BUILDING,
+        variables: { buildingId: selectedBuilding.buildingId },
+      });
+
+      // Close confirm dialog
+      setShowConfirmDialog(false);
+      
+      // Show success dialog
+      setSuccessMessage(`You have successfully joined ${selectedBuilding.name || 'the building'}!`);
+      setShowSuccessDialog(true);
+    } catch (err) {
+      console.error('Failed to join building:', err);
+      setShowConfirmDialog(false);
+      // Show error using window.alert as fallback
+      setTimeout(() => {
+        window.alert('Error: Failed to join building. Please try again.');
+      }, 100);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuccessConfirm = () => {
+    setShowSuccessDialog(false);
+    setSelectedBuilding(null);
+    
+    // Navigate to home page after user confirms success
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      // @ts-ignore - router navigation
+      navigation.navigate('index');
+    }
+  };
+
+  const handleCancelJoin = () => {
+    setShowConfirmDialog(false);
+    setSelectedBuilding(null);
   };
 
   // Keep track of step in a ref to access inside listener without re-binding
@@ -128,9 +195,30 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
           onSearchChange={setSearchQuery}
           filteredBuildings={filteredBuildings}
           onChangeLocation={() => setStep(1)}
-          onJoin={onJoin}
+          onJoin={handleJoinBuilding}
         />
       )}
+
+      {/* Confirm Join Dialog */}
+      {selectedBuilding && (
+        <ConfirmJoinDialog
+          visible={showConfirmDialog}
+          buildingName={selectedBuilding.name}
+          address={selectedBuilding.address}
+          memberCount={selectedBuilding.memberCount}
+          onConfirm={handleConfirmJoin}
+          onCancel={handleCancelJoin}
+          loading={loading}
+        />
+      )}
+
+      {/* Success Dialog */}
+      <SuccessDialog
+        visible={showSuccessDialog}
+        title="Success!"
+        message={successMessage}
+        onConfirm={handleSuccessConfirm}
+      />
     </View>
   );
 }

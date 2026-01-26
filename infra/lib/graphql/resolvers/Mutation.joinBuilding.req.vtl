@@ -1,0 +1,11 @@
+## Join a building (associate user with building)
+## Input: buildingId
+## Returns: Building object
+$util.qr($ctx.stash.put("buildingId", $ctx.args.buildingId))
+
+## Get authenticated user ID from claims
+#set($userId = $ctx.identity.claims.get("sub"))
+$util.qr($ctx.stash.put("userId", $userId))
+
+## Return empty - actual work done in response resolver
+{}

@@ -183,6 +183,19 @@ buildingsDataSource.createResolver('SearchBuildingsResolver', {
   ),
 });
 
+// Join building mutation
+buildingsDataSource.createResolver('JoinBuildingResolver', {
+  typeName: 'Mutation',
+  fieldName: 'joinBuilding',
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.res.vtl')
+  ),
+});
+
+
 channelsDataSource.createResolver('ListChannelsResolver', {
   typeName: 'Query',
   fieldName: 'listChannels',

@@ -1,0 +1,15 @@
+## Join building response resolver
+## For now, just return the building info
+## TODO: Implement user-building association in DynamoDB
+
+#set($buildingId = $ctx.stash.buildingId)
+
+## Query the building from DynamoDB
+{
+  "version": "2017-02-28",
+  "operation": "GetItem",
+  "key": {
+    "PK": $util.dynamodb.toDynamoDBJson("BUILDING#$buildingId"),
+    "SK": $util.dynamodb.toDynamoDBJson("METADATA")
+  }
+}
