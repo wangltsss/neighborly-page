@@ -21,6 +21,7 @@ build/
 .idea/
 *.iml
 .vscode/
+coverage/
 
 # --- AWS CDK Specific ---
 cdk.out/
