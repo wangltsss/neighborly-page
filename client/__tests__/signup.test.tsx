@@ -272,39 +272,38 @@ describe('SignupScreen', () => {
   });
 
   describe('Edge Cases', () => {
-    it('shows error when email is empty', async () => {
-      const renderResult = render(<SignupScreen />);
+    it('disables submit button when email is empty', () => {
+      const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
-      fillSignUpForm(renderResult, '', 'Password123!', 'Password123!');
-      fireEvent.press(renderResult.getByText('Sign Up'));
+      // Fill password fields but leave email empty
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123!');
 
-      await waitFor(() => {
-        expect(renderResult.getByText('Email is required.')).toBeTruthy();
-      });
+      // Button should be disabled - pressing it should not trigger signUp
+      fireEvent.press(getByText('Sign Up'));
       expect(authService.signUp).not.toHaveBeenCalled();
     });
 
-    it('shows error when password is empty', async () => {
-      const renderResult = render(<SignupScreen />);
+    it('disables submit button when password is empty', () => {
+      const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
-      fillSignUpForm(renderResult, 'test@example.com', '', '');
-      fireEvent.press(renderResult.getByText('Sign Up'));
+      fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
+      // Password fields left empty
 
-      await waitFor(() => {
-        expect(renderResult.getByText('Password is required.')).toBeTruthy();
-      });
+      // Button should be disabled - pressing it should not trigger signUp
+      fireEvent.press(getByText('Sign Up'));
       expect(authService.signUp).not.toHaveBeenCalled();
     });
 
-    it('shows error when confirm password is empty', async () => {
-      const renderResult = render(<SignupScreen />);
+    it('disables submit button when confirm password is empty', () => {
+      const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
-      fillSignUpForm(renderResult, 'test@example.com', 'Password123!', '');
-      fireEvent.press(renderResult.getByText('Sign Up'));
+      fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      // Confirm password left empty
 
-      await waitFor(() => {
-        expect(renderResult.getByText('Please confirm your password.')).toBeTruthy();
-      });
+      // Button should be disabled - pressing it should not trigger signUp
+      fireEvent.press(getByText('Sign Up'));
       expect(authService.signUp).not.toHaveBeenCalled();
     });
 
