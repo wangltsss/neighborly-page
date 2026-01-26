@@ -4,21 +4,27 @@ import { Spacing, BorderRadius, FontSize, AppColors, Layout } from '@/constants/
 
 interface InputProps extends TextInputProps {
   label: string;
+  error?: boolean;
+  errorMessage?: string;
 }
 
 /**
  * Reusable themed input component with label.
  * Supports all standard TextInput props.
+ * Supports error state with red border and error message.
  */
-export function Input({ label, style, ...props }: InputProps) {
+export function Input({ label, style, error, errorMessage, ...props }: InputProps) {
   return (
     <View style={styles.container} lightColor={AppColors.white} darkColor={AppColors.darkCard}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={[styles.input, style]}
+        style={[styles.input, error && styles.inputError, style]}
         placeholderTextColor={AppColors.placeholder}
         {...props}
       />
+      {error && errorMessage && (
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      )}
     </View>
   );
 }
@@ -40,5 +46,14 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     backgroundColor: AppColors.inputBackground,
     height: Layout.inputHeight,
+  },
+  inputError: {
+    borderColor: '#DC2626',
+    borderWidth: 2,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: FontSize.xs,
+    marginTop: Spacing.xs,
   },
 });

@@ -6,6 +6,12 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Spacing, BorderRadius, FontSize, AppColors, Shadow, Layout } from '@/constants/Theme';
 import { signIn } from '@/services/authService';
+import { validateEmail } from '@/utils/validation';
+
+interface FieldErrors {
+  email?: string;
+  password?: string;
+}
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -13,6 +19,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Track if component is mounted to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -25,8 +32,36 @@ export default function LoginScreen() {
     };
   }, []);
 
+  const validateFields = (): boolean => {
+    const errors: FieldErrors = {};
+    let isValid = true;
+
+    // Validate email
+    if (!email) {
+      errors.email = 'Email is required.';
+      isValid = false;
+    } else if (!validateEmail(email)) {
+      errors.email = 'Please enter a valid email address.';
+      isValid = false;
+    }
+
+    // Validate password
+    if (!password) {
+      errors.password = 'Password is required.';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
   const handleSignIn = async () => {
     setError(null);
+
+    if (!validateFields()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -36,7 +71,6 @@ export default function LoginScreen() {
       if (!isMountedRef.current) return;
 
       if (result.success) {
-        console.log('Sign in successful, userId:', result.userId);
         // TODO: Navigate to home screen after successful login
         // TODO: Store auth state in context/global state
       } else {
@@ -55,6 +89,20 @@ export default function LoginScreen() {
 
   const handleSignUp = () => {
     router.push('/signup');
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (fieldErrors.email) {
+      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    if (fieldErrors.password) {
+      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    }
   };
 
   return (
@@ -79,11 +127,13 @@ export default function LoginScreen() {
           label="Email"
           placeholder="you@example.com"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={handleEmailChange}
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
           editable={!isLoading}
+          error={!!fieldErrors.email}
+          errorMessage={fieldErrors.email}
         />
 
         {/* Password Input */}
@@ -91,10 +141,12 @@ export default function LoginScreen() {
           label="Password"
           placeholder="Enter your password"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
           secureTextEntry
           autoComplete="password"
           editable={!isLoading}
+          error={!!fieldErrors.password}
+          errorMessage={fieldErrors.password}
         />
 
         {/* Sign In Button */}

@@ -6,8 +6,15 @@ import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Spacing, BorderRadius, FontSize, AppColors, Shadow, Layout } from '@/constants/Theme';
 import { signUp, confirmSignUp, resendConfirmationCode } from '@/services/authService';
+import { validateEmail, validatePassword } from '@/utils/validation';
 
 type SignupStep = 'register' | 'verify';
+
+interface FieldErrors {
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -21,6 +28,7 @@ export default function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isMountedRef = useRef(true);
 
@@ -31,19 +39,55 @@ export default function SignupScreen() {
     };
   }, []);
 
+  const validateFields = (): boolean => {
+    const errors: FieldErrors = {};
+    let isValid = true;
+
+    // Validate email
+    if (!email) {
+      errors.email = 'Email is required.';
+      isValid = false;
+    } else if (!validateEmail(email)) {
+      errors.email = 'Please enter a valid email address.';
+      isValid = false;
+    }
+
+    // Validate password
+    if (!password) {
+      errors.password = 'Password is required.';
+      isValid = false;
+    } else {
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        const missing: string[] = [];
+        if (!passwordValidation.hasMinLength) missing.push('8+ characters');
+        if (!passwordValidation.hasUppercase) missing.push('uppercase letter');
+        if (!passwordValidation.hasLowercase) missing.push('lowercase letter');
+        if (!passwordValidation.hasNumber) missing.push('number');
+        if (!passwordValidation.hasSpecialChar) missing.push('special symbol');
+        errors.password = `Password needs: ${missing.join(', ')}.`;
+        isValid = false;
+      }
+    }
+
+    // Validate confirm password
+    if (!confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password.';
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
   const handleSignUp = async () => {
     setError(null);
     setMessage(null);
 
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError('Passwords do not match.');
-      return;
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (!validateFields()) {
       return;
     }
 
@@ -95,7 +139,6 @@ export default function SignupScreen() {
     } catch (err) {
       if (!isMountedRef.current) return;
       setError('An unexpected error occurred. Please try again.');
-      console.error('Verification error:', err);
     } finally {
       if (isMountedRef.current) {
         setIsLoading(false);
@@ -131,6 +174,29 @@ export default function SignupScreen() {
   const handleBackToLogin = () => {
     router.push('/login');
   };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (fieldErrors.email) {
+      setFieldErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    if (fieldErrors.password) {
+      setFieldErrors((prev) => ({ ...prev, password: undefined }));
+    }
+  };
+
+  const handleConfirmPasswordChange = (text: string) => {
+    setConfirmPassword(text);
+    if (fieldErrors.confirmPassword) {
+      setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+    }
+  };
+
+  const passwordValidation = validatePassword(password);
 
   return (
     <KeyboardAvoidingView
@@ -169,33 +235,61 @@ export default function SignupScreen() {
               label="Email"
               placeholder="you@example.com"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={handleEmailChange}
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
               editable={!isLoading}
+              error={!!fieldErrors.email}
+              errorMessage={fieldErrors.email}
             />
 
             {/* Password Input */}
             <Input
               label="Password"
-              placeholder="At least 8 characters"
+              placeholder="Enter your password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={handlePasswordChange}
               secureTextEntry
               autoComplete="new-password"
               editable={!isLoading}
+              error={!!fieldErrors.password}
+              errorMessage={fieldErrors.password}
             />
+
+            {/* Password Requirements */}
+            <View style={styles.requirementsContainer} lightColor={AppColors.white} darkColor={AppColors.darkCard}>
+              <Text style={styles.requirementsTitle}>Password must contain:</Text>
+              <View style={styles.requirementsList}>
+                <Text style={[styles.requirementText, passwordValidation.hasMinLength ? styles.requirementMet : styles.requirementUnmet]}>
+                  {passwordValidation.hasMinLength ? '✓' : '○'} At least 8 characters
+                </Text>
+                <Text style={[styles.requirementText, passwordValidation.hasUppercase ? styles.requirementMet : styles.requirementUnmet]}>
+                  {passwordValidation.hasUppercase ? '✓' : '○'} 1 uppercase letter (A-Z)
+                </Text>
+                <Text style={[styles.requirementText, passwordValidation.hasLowercase ? styles.requirementMet : styles.requirementUnmet]}>
+                  {passwordValidation.hasLowercase ? '✓' : '○'} 1 lowercase letter (a-z)
+                </Text>
+                <Text style={[styles.requirementText, passwordValidation.hasNumber ? styles.requirementMet : styles.requirementUnmet]}>
+                  {passwordValidation.hasNumber ? '✓' : '○'} 1 number (0-9)
+                </Text>
+                <Text style={[styles.requirementText, passwordValidation.hasSpecialChar ? styles.requirementMet : styles.requirementUnmet]}>
+                  {passwordValidation.hasSpecialChar ? '✓' : '○'} 1 special character (!@#$%^&*)
+                </Text>
+              </View>
+            </View>
 
             {/* Confirm Password Input */}
             <Input
               label="Confirm Password"
               placeholder="Re-enter your password"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={handleConfirmPasswordChange}
               secureTextEntry
               autoComplete="new-password"
               editable={!isLoading}
+              error={!!fieldErrors.confirmPassword}
+              errorMessage={fieldErrors.confirmPassword}
             />
 
             {/* Sign Up Button */}
@@ -295,6 +389,31 @@ const styles = StyleSheet.create({
     color: '#16A34A',
     fontSize: FontSize.sm,
     textAlign: 'center',
+  },
+  requirementsContainer: {
+    marginTop: -Spacing.md,
+    marginBottom: Spacing.lg,
+    padding: Spacing.md,
+    backgroundColor: '#F3F4F6',
+    borderRadius: BorderRadius.md,
+  },
+  requirementsTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+  },
+  requirementsList: {
+    gap: Spacing.xs,
+  },
+  requirementText: {
+    fontSize: FontSize.xs,
+    marginBottom: Spacing.xs,
+  },
+  requirementMet: {
+    color: '#16A34A',
+  },
+  requirementUnmet: {
+    color: '#6B7280',
   },
   resendButton: {
     alignItems: 'center',
