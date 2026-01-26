@@ -107,7 +107,6 @@ export default function SignupScreen() {
     } catch (err) {
       if (!isMountedRef.current) return;
       setError('An unexpected error occurred. Please try again.');
-      console.error('Signup error:', err);
     } finally {
       if (isMountedRef.current) {
         setIsLoading(false);

@@ -79,7 +79,6 @@ export default function LoginScreen() {
     } catch (err) {
       if (!isMountedRef.current) return;
       setError('An unexpected error occurred. Please try again.');
-      console.error('Login error:', err);
     } finally {
       if (isMountedRef.current) {
         setIsLoading(false);

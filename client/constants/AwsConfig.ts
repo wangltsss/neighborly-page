@@ -13,7 +13,6 @@
 function getEnvVar(key: string): string {
   const value = process.env[key];
   if (!value) {
-    console.warn(`Missing environment variable: ${key}. Check your .env file.`);
     return '';
   }
   return value;
