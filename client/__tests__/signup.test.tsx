@@ -35,7 +35,7 @@ describe('SignupScreen', () => {
       expect(getByText('Password')).toBeTruthy();
       expect(getByText('Confirm Password')).toBeTruthy();
       expect(getByPlaceholderText('you@example.com')).toBeTruthy();
-      expect(getByPlaceholderText('At least 8 characters')).toBeTruthy();
+      expect(getByPlaceholderText('Enter your password')).toBeTruthy();
       expect(getByPlaceholderText('Re-enter your password')).toBeTruthy();
       expect(getByText('Sign Up')).toBeTruthy();
       expect(getByText('Sign In')).toBeTruthy();
@@ -51,26 +51,26 @@ describe('SignupScreen', () => {
 
     it('updates password input when typing', () => {
       const { getByPlaceholderText } = render(<SignupScreen />);
-      const passwordInput = getByPlaceholderText('At least 8 characters');
+      const passwordInput = getByPlaceholderText('Enter your password');
 
-      fireEvent.changeText(passwordInput, 'Password123');
-      expect(passwordInput.props.value).toBe('Password123');
+      fireEvent.changeText(passwordInput, 'Password123!');
+      expect(passwordInput.props.value).toBe('Password123!');
     });
 
     it('updates confirm password input when typing', () => {
       const { getByPlaceholderText } = render(<SignupScreen />);
       const confirmInput = getByPlaceholderText('Re-enter your password');
 
-      fireEvent.changeText(confirmInput, 'Password123');
-      expect(confirmInput.props.value).toBe('Password123');
+      fireEvent.changeText(confirmInput, 'Password123!');
+      expect(confirmInput.props.value).toBe('Password123!');
     });
 
     it('shows error when passwords do not match', async () => {
       const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
       fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
-      fireEvent.changeText(getByPlaceholderText('At least 8 characters'), 'Password123');
-      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password456');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password456!');
       fireEvent.press(getByText('Sign Up'));
 
       await waitFor(() => {
@@ -78,16 +78,16 @@ describe('SignupScreen', () => {
       });
     });
 
-    it('shows error when password is too short', async () => {
+    it('shows error when password does not meet requirements', async () => {
       const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
       fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
-      fireEvent.changeText(getByPlaceholderText('At least 8 characters'), 'Pass1');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Pass1');
       fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Pass1');
       fireEvent.press(getByText('Sign Up'));
 
       await waitFor(() => {
-        expect(getByText('Password must be at least 8 characters.')).toBeTruthy();
+        expect(getByText(/Password needs:/)).toBeTruthy();
       });
     });
 
@@ -98,12 +98,12 @@ describe('SignupScreen', () => {
       const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
       fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
-      fireEvent.changeText(getByPlaceholderText('At least 8 characters'), 'Password123');
-      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123!');
       fireEvent.press(getByText('Sign Up'));
 
       await waitFor(() => {
-        expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'Password123');
+        expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'Password123!');
       });
     });
 
@@ -114,8 +114,8 @@ describe('SignupScreen', () => {
       const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
       fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
-      fireEvent.changeText(getByPlaceholderText('At least 8 characters'), 'Password123');
-      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123!');
       fireEvent.press(getByText('Sign Up'));
 
       await waitFor(() => {
@@ -134,8 +134,8 @@ describe('SignupScreen', () => {
       const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
       fireEvent.changeText(getByPlaceholderText('you@example.com'), 'existing@example.com');
-      fireEvent.changeText(getByPlaceholderText('At least 8 characters'), 'Password123');
-      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123!');
       fireEvent.press(getByText('Sign Up'));
 
       await waitFor(() => {
@@ -152,8 +152,8 @@ describe('SignupScreen', () => {
       const { getByPlaceholderText, getByText } = render(<SignupScreen />);
 
       fireEvent.changeText(getByPlaceholderText('you@example.com'), 'test@example.com');
-      fireEvent.changeText(getByPlaceholderText('At least 8 characters'), 'Password123');
-      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123');
+      fireEvent.changeText(getByPlaceholderText('Enter your password'), 'Password123!');
+      fireEvent.changeText(getByPlaceholderText('Re-enter your password'), 'Password123!');
       fireEvent.press(getByText('Sign Up'));
 
       await waitFor(() => {
@@ -182,12 +182,12 @@ describe('SignupScreen', () => {
         'test@example.com'
       );
       fireEvent.changeText(
-        renderResult.getByPlaceholderText('At least 8 characters'),
-        'Password123'
+        renderResult.getByPlaceholderText('Enter your password'),
+        'Password123!'
       );
       fireEvent.changeText(
         renderResult.getByPlaceholderText('Re-enter your password'),
-        'Password123'
+        'Password123!'
       );
       fireEvent.press(renderResult.getByText('Sign Up'));
 
