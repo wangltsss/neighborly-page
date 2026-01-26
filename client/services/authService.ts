@@ -3,6 +3,9 @@
  *
  * Handles all Cognito authentication operations.
  * Uses amazon-cognito-identity-js (lightweight, no Amplify dependency).
+ *
+ * Security Note: All communication with Cognito uses HTTPS by default.
+ * Passwords are transmitted securely over TLS and are never stored in plaintext.
  */
 
 import {
@@ -10,7 +13,6 @@ import {
   CognitoUser,
   AuthenticationDetails,
   CognitoUserSession,
-  ISignUpResult,
 } from 'amazon-cognito-identity-js';
 import { AwsConfig } from '@/constants/AwsConfig';
 
@@ -19,6 +21,26 @@ const userPool = new CognitoUserPool({
   UserPoolId: AwsConfig.userPoolId,
   ClientId: AwsConfig.userPoolClientId,
 });
+
+/**
+ * Cognito error types for better type safety
+ */
+type CognitoErrorName =
+  | 'UserNotFoundException'
+  | 'NotAuthorizedException'
+  | 'UserNotConfirmedException'
+  | 'UsernameExistsException'
+  | 'InvalidPasswordException'
+  | 'CodeMismatchException'
+  | 'ExpiredCodeException'
+  | 'LimitExceededException'
+  | 'InvalidParameterException'
+  | 'TooManyRequestsException';
+
+interface CognitoError extends Error {
+  name: CognitoErrorName;
+  code?: string;
+}
 
 /**
  * Result types for auth operations
@@ -62,7 +84,7 @@ export function signIn(email: string, password: string): Promise<SignInResult> {
           userId: session.getIdToken().payload.sub,
         });
       },
-      onFailure: (error) => {
+      onFailure: (error: CognitoError) => {
         resolve({
           success: false,
           message: getErrorMessage(error),
@@ -88,17 +110,11 @@ export function signUp(email: string, password: string): Promise<SignUpResult> {
       password,
       [], // User attributes (email is auto-included)
       [],
-      (error, result: ISignUpResult | undefined) => {
+      (error, result) => {
         if (error) {
-          console.error('Cognito signUp error:', {
-            name: error.name,
-            message: error.message,
-            code: (error as any).code,
-            fullError: error,
-          });
           resolve({
             success: false,
-            message: getErrorMessage(error),
+            message: getErrorMessage(error as CognitoError),
           });
           return;
         }
@@ -124,11 +140,11 @@ export function confirmSignUp(email: string, code: string): Promise<AuthResult> 
       Pool: userPool,
     });
 
-    cognitoUser.confirmRegistration(code, true, (error, result) => {
+    cognitoUser.confirmRegistration(code, true, (error) => {
       if (error) {
         resolve({
           success: false,
-          message: getErrorMessage(error),
+          message: getErrorMessage(error as CognitoError),
         });
         return;
       }
@@ -151,11 +167,11 @@ export function resendConfirmationCode(email: string): Promise<AuthResult> {
       Pool: userPool,
     });
 
-    cognitoUser.resendConfirmationCode((error, result) => {
+    cognitoUser.resendConfirmationCode((error) => {
       if (error) {
         resolve({
           success: false,
-          message: getErrorMessage(error),
+          message: getErrorMessage(error as CognitoError),
         });
         return;
       }
@@ -214,19 +230,21 @@ export async function getCurrentUserId(): Promise<string | null> {
 /**
  * Convert Cognito errors to user-friendly messages
  */
-function getErrorMessage(error: Error): string {
-  const errorMessages: Record<string, string> = {
+function getErrorMessage(error: CognitoError): string {
+  const errorMessages: Record<CognitoErrorName, string> = {
     UserNotFoundException: 'No account found with this email.',
     NotAuthorizedException: 'Incorrect email or password.',
     UserNotConfirmedException: 'Please verify your email before signing in.',
     UsernameExistsException: 'An account with this email already exists.',
     InvalidPasswordException:
-      'Password must be at least 8 characters with uppercase, lowercase, and numbers.',
+      'Password must be at least 8 characters with uppercase, lowercase, numbers, and special symbols.',
     CodeMismatchException: 'Invalid verification code.',
     ExpiredCodeException: 'Verification code has expired. Please request a new one.',
     LimitExceededException: 'Too many attempts. Please try again later.',
+    InvalidParameterException: 'Invalid input. Please check your information.',
+    TooManyRequestsException: 'Too many requests. Please wait a moment and try again.',
   };
 
-  const errorName = error.name || '';
+  const errorName = error.name as CognitoErrorName;
   return errorMessages[errorName] || error.message || 'An unexpected error occurred.';
 }
