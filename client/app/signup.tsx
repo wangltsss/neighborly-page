@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { StyleSheet, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { StyleSheet, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import { Input } from '@/components/Input';
@@ -202,7 +202,12 @@ export default function SignupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.card} lightColor={AppColors.white} darkColor={AppColors.darkCard}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.card} lightColor={AppColors.white} darkColor={AppColors.darkCard}>
         {/* Header */}
         <Text style={styles.title}>
           {step === 'register' ? 'Create Account' : 'Verify Email'}
@@ -337,6 +342,7 @@ export default function SignupScreen() {
           </Pressable>
         </View>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -344,6 +350,9 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.lg,
