@@ -9,6 +9,7 @@ import { ApolloProvider } from '@apollo/client';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { apolloClient } from '@/lib/apollo-client';
+import { ToastProvider } from '@/components/Toast';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -53,10 +54,12 @@ function RootLayoutNav() {
   return (
     <ApolloProvider client={apolloClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
+        <ToastProvider>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </Stack>
+        </ToastProvider>
       </ThemeProvider>
     </ApolloProvider>
   );

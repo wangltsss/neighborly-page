@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Spacing, BorderRadius, FontSize, AppColors, Shadow, Layout } from '@/constants/Theme';
 import { signIn } from '@/services/authService';
 import { validateEmail } from '@/utils/validation';
+import { useToast } from '@/components/Toast';
 
 interface FieldErrors {
   email?: string;
@@ -15,6 +16,7 @@ interface FieldErrors {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,8 +73,13 @@ export default function LoginScreen() {
       if (!isMountedRef.current) return;
 
       if (result.success) {
-        // TODO: Navigate to home screen after successful login
-        // TODO: Store auth state in context/global state
+        showToast('Login successful! Redirecting...', 'success');
+        // Navigate to home after short delay
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            router.replace('/(tabs)');
+          }
+        }, 1000);
       } else {
         setError(result.message);
       }
