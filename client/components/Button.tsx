@@ -11,15 +11,17 @@ interface ButtonProps extends PressableProps {
  * Reusable themed button component.
  * Supports primary and secondary variants with press feedback.
  */
-export function Button({ title, variant = 'primary', style, ...props }: ButtonProps) {
+export function Button({ title, variant = 'primary', style, disabled, ...props }: ButtonProps) {
   return (
     <Pressable
       style={({ pressed }) => [
         styles.button,
         variant === 'primary' ? styles.primaryButton : styles.secondaryButton,
-        pressed && styles.buttonPressed,
+        pressed && !disabled && styles.buttonPressed,
+        disabled && styles.buttonDisabled,
         style,
       ]}
+      disabled={disabled}
       {...props}
     >
       <Text style={[
@@ -50,6 +52,9 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   buttonText: {
     fontSize: FontSize.md,
