@@ -7,8 +7,6 @@ import { BuildingCard } from '@/components/home/BuildingCard';
 import { MOCK_BUILDINGS } from '@/assets/mockdata/CommunityData';
 import { homeStyles } from '@/constants/NativeWindStyles';
 
-import '../../global.css';
-
 export default function HomeScreen() {
   return (
     <View className={homeStyles.container}>

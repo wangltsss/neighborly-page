@@ -7,6 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { ApolloProvider } from '@apollo/client';
 
+import '../global.css';
+
 import { useColorScheme } from '@/components/useColorScheme';
 import { apolloClient } from '@/lib/apollo-client';
 import { ToastProvider } from '@/components/Toast';
