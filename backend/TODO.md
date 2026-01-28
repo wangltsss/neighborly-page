@@ -1,10 +1,27 @@
 # Backend Lambda Functions - Implementation Plan
 
-## Current Status: NOT YET NEEDED ✅
+## Current Status: PARTIALLY IMPLEMENTED ✅
 
-**Architecture**: AppSync + VTL handles all operations
-**Cost**: $0/month (no Lambda yet)
-**Performance**: Excellent (no cold starts)
+**Architecture**: Hybrid - Lambda for user operations, VTL for messaging
+**Implemented**:
+- ✅ `user-handler` - GetUserHandler, UpdateUserHandler
+
+**Remaining**:
+- ⏳ Media Upload (Priority 1)
+- ⏳ Security Hardening (Priority 2)
+
+---
+
+## 🎯 Implemented
+
+### User Profile Handlers ✅ DONE
+
+**Location**: `backend/user-handler/`
+
+| Handler | Operation | Status |
+|---------|-----------|--------|
+| `GetUserHandler` | `Query.getUser` | ✅ Deployed |
+| `UpdateUserHandler` | `Mutation.updateUser` | ✅ Deployed |
 
 ---
 
