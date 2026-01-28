@@ -8,6 +8,7 @@ import { neighborlyConfig } from '../lib/config';
 import { AuthStack } from '../lib/auth/auth-stack';
 import { MessagingStack } from '../lib/messaging/messaging-stack';
 import { BuildingStack } from '../lib/building/building-stack';
+import { UserLambdasConstruct } from '../lib/user/user-lambdas-construct';
 
 const app = new cdk.App();
 
@@ -141,15 +142,31 @@ const userChannelStateDataSource = api.addDynamoDbDataSource(
 );
 
 // ============================================
+// USER LAMBDA FUNCTIONS
+// ============================================
+const userLambdas = new UserLambdasConstruct(authCdkStack, 'UserLambdas', {
+  usersTable: auth.usersTable,
+});
+
+// Lambda data sources for user operations
+const getUserDataSource = api.addLambdaDataSource(
+  'GetUserLambdaDataSource',
+  userLambdas.getUserHandler
+);
+
+const updateUserDataSource = api.addLambdaDataSource(
+  'UpdateUserLambdaDataSource',
+  userLambdas.updateUserHandler
+);
+
+// ============================================
 // RESOLVERS - All created here
 // ============================================
 
-// Auth resolvers
-usersDataSource.createResolver('GetUserResolver', {
+// User resolvers (Lambda-backed)
+getUserDataSource.createResolver('GetUserResolver', {
   typeName: 'Query',
   fieldName: 'getUser',
-  requestMappingTemplate: appsync.MappingTemplate.dynamoDbGetItem('userId', 'userId'),
-  responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
 });
 
 usersDataSource.createResolver('GetUsersByIdsResolver', {
@@ -213,16 +230,10 @@ userChannelStateDataSource.createResolver('UpdateLastReadResolver', {
   ),
 });
 
-// User profile resolver
-usersDataSource.createResolver('UpdateUserResolver', {
+// User profile resolver (Lambda-backed)
+updateUserDataSource.createResolver('UpdateUserResolver', {
   typeName: 'Mutation',
   fieldName: 'updateUser',
-  requestMappingTemplate: appsync.MappingTemplate.fromFile(
-    path.join(__dirname, '../lib/graphql/resolvers/Mutation.updateUser.req.vtl')
-  ),
-  responseMappingTemplate: appsync.MappingTemplate.fromFile(
-    path.join(__dirname, '../lib/graphql/resolvers/Mutation.updateUser.res.vtl')
-  ),
 });
 
 // ============================================
