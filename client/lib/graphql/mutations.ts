@@ -27,14 +27,6 @@ export const UPDATE_LAST_READ = gql`
 
 export const JOIN_BUILDING = gql`
   mutation JoinBuilding($buildingId: ID!) {
-    joinBuilding(buildingId: $buildingId) {
-      buildingId
-      name
-      address
-      city
-      state
-      country
-      memberCount
-    }
+    joinBuilding(buildingId: $buildingId)
   }
 `;

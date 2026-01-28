@@ -59,7 +59,7 @@ type MessageConnection @aws_api_key @aws_cognito_user_pools {
 }
 
 type Mutation {
-  joinBuilding(buildingId: ID!): Building @aws_api_key @aws_cognito_user_pools
+  joinBuilding(buildingId: ID!): Boolean! @aws_api_key @aws_cognito_user_pools
   createChannel(buildingId: ID!, name: String!, description: String): Channel
     @aws_api_key
     @aws_cognito_user_pools

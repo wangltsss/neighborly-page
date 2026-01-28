@@ -1,11 +1,26 @@
-## Join a building (associate user with building)
-## Input: buildingId
-## Returns: Building object
-$util.qr($ctx.stash.put("buildingId", $ctx.args.buildingId))
+## Join building request - check if user already joined
+## Query user record to check joinedBuildings
 
-## Get authenticated user ID from claims
-#set($userId = $ctx.identity.claims.get("sub"))
+#set($buildingId = $ctx.args.buildingId)
+
+## Get authenticated user ID from Cognito claims
+## When using API_KEY auth (development), use a test user ID
+#if($ctx.identity.claims)
+  #set($userId = $ctx.identity.claims.get("sub"))
+#else
+  ## Temporary: use test user for API key mode
+  #set($userId = "test-user-api-key")
+#end
+
+## Store in stash for response resolver
+$util.qr($ctx.stash.put("buildingId", $buildingId))
 $util.qr($ctx.stash.put("userId", $userId))
 
-## Return empty - actual work done in response resolver
-{}
+## Check if user exists and get their joined buildings
+{
+  "version": "2017-02-28",
+  "operation": "GetItem",
+  "key": {
+    "userId": $util.dynamodb.toDynamoDBJson("$userId")
+  }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, View } from 'react-native';
-import { Stack, useNavigation } from 'expo-router';
+import { Stack, useNavigation, router } from 'expo-router';
 import { LocationWizard } from '@/components/search/LocationWizard';
 import { BuildingSearch } from '@/components/search/BuildingSearch';
 import { buildingService, Building } from '@/services/building.service';
@@ -8,6 +8,7 @@ import { apolloClient } from '@/lib/apollo-client';
 import { JOIN_BUILDING } from '@/lib/graphql/mutations';
 import { ConfirmJoinDialog } from '@/components/search/ConfirmJoinDialog';
 import { SuccessDialog } from '@/components/common/SuccessDialog';
+import { ErrorDialog } from '@/components/common/ErrorDialog';
 import { searchStyles } from '@/constants/NativeWindStyles';
 
 interface BuildingDiscoveryProps {
@@ -36,6 +37,8 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // --- HANDLERS ---
   const handleCountryChange = (value: string) => {
@@ -96,13 +99,21 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
       // Show success dialog
       setSuccessMessage(`You have successfully joined ${selectedBuilding.name || 'the building'}!`);
       setShowSuccessDialog(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to join building:', err);
       setShowConfirmDialog(false);
-      // Show error using window.alert as fallback
-      setTimeout(() => {
-        window.alert('Error: Failed to join building. Please try again.');
-      }, 100);
+      
+      // Extract error message from GraphQL error
+      let errMsg = 'Failed to join building. Please try again.';
+      if (err.graphQLErrors && err.graphQLErrors.length > 0) {
+        errMsg = err.graphQLErrors[0].message;
+      } else if (err.message) {
+        errMsg = err.message;
+      }
+      
+      // Show error dialog
+      setErrorMessage(errMsg);
+      setShowErrorDialog(true);
     } finally {
       setLoading(false);
     }
@@ -112,13 +123,8 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     setShowSuccessDialog(false);
     setSelectedBuilding(null);
     
-    // Navigate to home page after user confirms success
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      // @ts-ignore - router navigation
-      navigation.navigate('index');
-    }
+    // Navigate to home page
+    router.push('/(tabs)');
   };
 
   const handleCancelJoin = () => {
@@ -212,12 +218,24 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
         />
       )}
 
+
       {/* Success Dialog */}
       <SuccessDialog
         visible={showSuccessDialog}
         title="Success!"
         message={successMessage}
         onConfirm={handleSuccessConfirm}
+      />
+
+      {/* Error Dialog */}
+      <ErrorDialog
+        visible={showErrorDialog}
+        title="Oops!"
+        message={errorMessage}
+        onConfirm={() => {
+          setShowErrorDialog(false);
+          setSelectedBuilding(null);
+        }}
       />
     </View>
   );

@@ -65,9 +65,27 @@ const dynamoClient = new DynamoDBClient({ region: CONFIG.region });
 
 const TEST_DATA = {
   users: [
-    { email: 'test-user-1@neighborly.local', username: 'Alice' },
-    { email: 'test-user-2@neighborly.local', username: 'Bob' },
-    { email: 'test-user-3@neighborly.local', username: 'Charlie' },
+    {
+      userId: 'a468c4e8-90b1-7002-d22e-bd1fae4cf1d6',
+      email: 'alice@neighborly.app',
+      username: 'alice',
+    },
+    {
+      userId: '34088438-d031-702e-5120-02d8612c2284',
+      email: 'bob@neighborly.app',
+      username: 'bob',
+    },
+    {
+      userId: '74c8e4e8-3091-7033-59db-88f6d9bc4f6d',
+      email: 'charlie@neighborly.app',
+      username: 'charlie',
+    },
+    // Test user for API Key mode development
+    {
+      userId: 'test-user-api-key',
+      email: 'test@neighborly.app',
+      username: 'test-user',
+    },
   ],
   
   buildings: [
@@ -261,7 +279,8 @@ async function createUsers(): Promise<UserData[]> {
   const users: UserData[] = [];
 
   for (const userData of TEST_DATA.users) {
-    const userId = await createCognitoUser(userData.email);
+    // Use custom userId if provided (for API key test user), otherwise create Cognito user
+    const userId = userData.userId || await createCognitoUser(userData.email);
 
     await dynamoClient.send(
       new PutItemCommand({
@@ -416,7 +435,8 @@ async function updateUserBuildings(users: UserData[], buildings: BuildingData[])
           userId: user.userId,
           email: user.email,
           username: user.username,
-          joinedBuildings,
+          // JavaScript Set is automatically converted to DynamoDB StringSet by marshall
+          joinedBuildings: new Set(joinedBuildings),
           createdTime: new Date().toISOString(),
         }),
       })

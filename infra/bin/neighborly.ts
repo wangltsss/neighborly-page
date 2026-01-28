@@ -183,15 +183,41 @@ buildingsDataSource.createResolver('SearchBuildingsResolver', {
   ),
 });
 
-// Join building mutation
-buildingsDataSource.createResolver('JoinBuildingResolver', {
-  typeName: 'Mutation',
-  fieldName: 'joinBuilding',
+// Join building mutation - pipeline with 2 functions
+// Function 1: GetItem + check duplicates
+const joinBuildingCheckFunction = new appsync.AppsyncFunction(authCdkStack, 'JoinBuildingCheckFunction', {
+  name: 'joinBuildingCheckFunction',
+  api,
+  dataSource: usersDataSource,
   requestMappingTemplate: appsync.MappingTemplate.fromFile(
     path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.req.vtl')
   ),
   responseMappingTemplate: appsync.MappingTemplate.fromFile(
     path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.res.vtl')
+  ),
+});
+
+// Function 2: Execute UpdateItem
+const joinBuildingUpdateFunction = new appsync.AppsyncFunction(authCdkStack, 'JoinBuildingUpdateFunction', {
+  name: 'joinBuildingUpdateFunction',
+  api,
+  dataSource: usersDataSource,
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.func2.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.func2.res.vtl')
+  ),
+});
+
+new appsync.Resolver(authCdkStack, 'JoinBuildingResolver', {
+  api,
+  typeName: 'Mutation',
+  fieldName: 'joinBuilding',
+  pipelineConfig: [joinBuildingCheckFunction, joinBuildingUpdateFunction],
+  requestMappingTemplate: appsync.MappingTemplate.fromString('{}'),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.after.vtl')
   ),
 });
 
