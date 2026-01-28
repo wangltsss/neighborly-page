@@ -213,6 +213,18 @@ userChannelStateDataSource.createResolver('UpdateLastReadResolver', {
   ),
 });
 
+// User profile resolver
+usersDataSource.createResolver('UpdateUserResolver', {
+  typeName: 'Mutation',
+  fieldName: 'updateUser',
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.updateUser.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.updateUser.res.vtl')
+  ),
+});
+
 // ============================================
 // OUTPUTS
 // ============================================

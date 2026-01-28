@@ -1,0 +1,13 @@
+{
+  "version": "2017-02-28",
+  "operation": "UpdateItem",
+  "key": {
+    "userId": $util.dynamodb.toDynamoDBJson($ctx.identity.sub)
+  },
+  "update": {
+    "expression": "SET username = :username",
+    "expressionValues": {
+      ":username": $util.dynamodb.toDynamoDBJson($ctx.args.username)
+    }
+  }
+}

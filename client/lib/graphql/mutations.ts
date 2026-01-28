@@ -24,3 +24,18 @@ export const UPDATE_LAST_READ = gql`
     updateLastRead(channelId: $channelId, lastReadTime: $lastReadTime)
   }
 `;
+
+/**
+ * Mutation to update user profile
+ */
+export const UPDATE_USER = gql`
+  mutation UpdateUser($username: String!) {
+    updateUser(username: $username) {
+      userId
+      email
+      username
+      joinedBuildings
+      createdTime
+    }
+  }
+`;

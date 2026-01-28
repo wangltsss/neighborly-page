@@ -4,15 +4,18 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  TextInput,
+  Pressable,
 } from 'react-native';
 import { router } from 'expo-router';
-import { useQuery } from '@apollo/client';
-import { LogOut, User, Mail, Calendar, Building2 } from 'lucide-react-native';
+import { useQuery, useMutation } from '@apollo/client';
+import { User, Mail, Calendar, Building2, Pencil, Check, X } from 'lucide-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { Button } from '@/components/Button';
 import { useToast } from '@/components/Toast';
 import { GET_USER } from '@/lib/graphql/queries';
+import { UPDATE_USER } from '@/lib/graphql/mutations';
 import { signOut, getCurrentUserId } from '@/services/authService';
 import {
   Spacing,
@@ -34,6 +37,8 @@ export default function ProfileScreen() {
   const { showToast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editUsername, setEditUsername] = useState('');
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -55,14 +60,28 @@ export default function ProfileScreen() {
     }
   };
 
-  const { data, loading, error, refetch } = useQuery<{ getUser: UserData }>(
+  const { data, loading, error, refetch } = useQuery<{ getUser: UserData | null }>(
     GET_USER,
     {
       variables: { userId },
       skip: !userId,
       fetchPolicy: 'cache-and-network',
+      onError: (err) => {
+        console.log('Profile query error:', err.message);
+      },
     }
   );
+
+  const [updateUser, { loading: updating }] = useMutation(UPDATE_USER, {
+    onCompleted: () => {
+      showToast('Profile updated successfully', 'success');
+      setIsEditing(false);
+      refetch();
+    },
+    onError: (err) => {
+      showToast(err.message || 'Failed to update profile', 'error');
+    },
+  });
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -74,6 +93,24 @@ export default function ProfileScreen() {
     signOut();
     showToast('Signed out successfully', 'success');
     router.replace('/login');
+  };
+
+  const handleEditStart = () => {
+    setEditUsername(data?.getUser?.username || '');
+    setIsEditing(true);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditUsername('');
+  };
+
+  const handleEditSave = () => {
+    if (!editUsername.trim()) {
+      showToast('Username cannot be empty', 'error');
+      return;
+    }
+    updateUser({ variables: { username: editUsername.trim() } });
   };
 
   const formatDate = (dateString: string) => {
@@ -98,12 +135,47 @@ export default function ProfileScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Failed to load profile</Text>
+        <Text style={styles.errorDetail}>{error.message}</Text>
         <Button title="Retry" onPress={() => refetch()} />
+        <Button
+          title="Sign Out"
+          variant="secondary"
+          onPress={() => {
+            signOut();
+            router.replace('/login');
+          }}
+          style={{ marginTop: Spacing.md }}
+        />
       </View>
     );
   }
 
   const user = data?.getUser;
+
+  // Handle case where user exists in Cognito but not in DynamoDB
+  if (!loading && !user && userId) {
+    return (
+      <View style={styles.errorContainer}>
+        <User size={48} color={AppColors.placeholder} />
+        <Text style={styles.errorText}>Profile not found</Text>
+        <Text style={styles.errorDetail}>
+          Your account exists but profile data is missing.
+          This can happen if you signed up before the system was fully deployed.
+        </Text>
+        <Text style={styles.userIdText}>User ID: {userId}</Text>
+        <Button title="Retry" onPress={() => refetch()} />
+        <Button
+          title="Sign Out"
+          variant="secondary"
+          onPress={() => {
+            signOut();
+            router.replace('/login');
+          }}
+          style={{ marginTop: Spacing.md }}
+        />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -138,7 +210,14 @@ export default function ProfileScreen() {
         lightColor={AppColors.white}
         darkColor={AppColors.darkCard}
       >
-        <Text style={styles.sectionTitle}>Account Information</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Account Information</Text>
+          {!isEditing && (
+            <Pressable onPress={handleEditStart} style={styles.editButton}>
+              <Pencil size={18} color={AppColors.primary} />
+            </Pressable>
+          )}
+        </View>
 
         <View style={styles.infoRow}>
           <View style={styles.infoIcon}>
@@ -156,9 +235,41 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.infoContent}>
             <Text style={styles.infoLabel}>Username</Text>
-            <Text style={styles.infoValue}>
-              {user?.username || 'Not set'}
-            </Text>
+            {isEditing ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.editInput}
+                  value={editUsername}
+                  onChangeText={setEditUsername}
+                  placeholder="Enter username"
+                  placeholderTextColor={AppColors.placeholder}
+                  autoFocus
+                  editable={!updating}
+                />
+                <Pressable
+                  onPress={handleEditSave}
+                  style={[styles.actionButton, styles.saveButton]}
+                  disabled={updating}
+                >
+                  {updating ? (
+                    <ActivityIndicator size="small" color={AppColors.white} />
+                  ) : (
+                    <Check size={18} color={AppColors.white} />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={handleEditCancel}
+                  style={[styles.actionButton, styles.cancelButton]}
+                  disabled={updating}
+                >
+                  <X size={18} color={AppColors.white} />
+                </Pressable>
+              </View>
+            ) : (
+              <Text style={styles.infoValue}>
+                {user?.username || 'Not set'}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -252,6 +363,20 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: FontSize.md,
     color: '#DC2626',
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  errorDetail: {
+    fontSize: FontSize.sm,
+    color: AppColors.placeholder,
+    textAlign: 'center',
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  userIdText: {
+    fontSize: FontSize.xs,
+    color: AppColors.placeholder,
+    fontFamily: 'monospace',
     marginBottom: Spacing.md,
   },
   headerCard: {
@@ -287,10 +412,18 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     ...Shadow.card,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
   sectionTitle: {
     fontSize: FontSize.lg,
     fontWeight: '600',
-    marginBottom: Spacing.lg,
+  },
+  editButton: {
+    padding: Spacing.xs,
   },
   infoRow: {
     flexDirection: 'row',
@@ -319,6 +452,35 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: FontSize.md,
     fontWeight: '500',
+  },
+  editRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editInput: {
+    flex: 1,
+    fontSize: FontSize.md,
+    fontWeight: '500',
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    marginRight: Spacing.sm,
+  },
+  actionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: Spacing.xs,
+  },
+  saveButton: {
+    backgroundColor: '#16A34A',
+  },
+  cancelButton: {
+    backgroundColor: '#DC2626',
   },
   buildingRow: {
     flexDirection: 'row',
