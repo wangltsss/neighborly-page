@@ -202,6 +202,8 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
           onProvinceChange={handleProvinceChange}
           onCityChange={setSelectedCity}
           onNext={handleNextStep}
+          error={error}
+          isLoading={loading}
         />
       )}
 
