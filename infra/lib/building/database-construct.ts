@@ -26,7 +26,7 @@ export class BuildingDatabaseConstruct extends Construct {
 
     // Buildings table - stores building metadata
     this.buildingsTable = new dynamodb.Table(this, 'BuildingsTable', {
-      tableName: `${config.resourcePrefix}-buildings`,
+      tableName: `${config.fullResourcePrefix}-buildings`,
       partitionKey: {
         name: 'buildingId',
         type: dynamodb.AttributeType.STRING,
@@ -36,11 +36,15 @@ export class BuildingDatabaseConstruct extends Construct {
       pointInTimeRecovery: false,
     });
 
-    // GSI for searching buildings by address
+    // GSI for searching buildings by location (city + state)
     this.buildingsTable.addGlobalSecondaryIndex({
-      indexName: 'AddressIndex',
+      indexName: 'LocationIndex',
       partitionKey: {
-        name: 'address',
+        name: 'city',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'state',
         type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.ALL,
@@ -50,7 +54,7 @@ export class BuildingDatabaseConstruct extends Construct {
     new cdk.CfnOutput(this, 'BuildingsTableName', {
       value: this.buildingsTable.tableName,
       description: 'DynamoDB Buildings Table Name',
-      exportName: `${config.resourcePrefix}-buildings-table`,
+      exportName: `${config.fullResourcePrefix}-buildings-table`,
     });
   }
 }

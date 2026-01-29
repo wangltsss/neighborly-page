@@ -24,3 +24,9 @@ export const UPDATE_LAST_READ = gql`
     updateLastRead(channelId: $channelId, lastReadTime: $lastReadTime)
   }
 `;
+
+export const JOIN_BUILDING = gql`
+  mutation JoinBuilding($buildingId: ID!) {
+    joinBuilding(buildingId: $buildingId)
+  }
+`;

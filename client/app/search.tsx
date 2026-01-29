@@ -1,10 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button, View } from 'react-native';
-import { Stack, useNavigation } from 'expo-router';
+import { Stack, useNavigation, router } from 'expo-router';
 import { LocationWizard } from '@/components/search/LocationWizard';
 import { BuildingSearch } from '@/components/search/BuildingSearch';
-import { MOCK_BUILDINGS } from '@/assets/mockdata/CommunityData';
+import { buildingService, Building } from '@/services/building.service';
+import { apolloClient } from '@/lib/apollo-client';
+import { JOIN_BUILDING } from '@/lib/graphql/mutations';
+import { ConfirmJoinDialog } from '@/components/search/ConfirmJoinDialog';
+import { SuccessDialog } from '@/components/common/SuccessDialog';
+import { ErrorDialog } from '@/components/common/ErrorDialog';
 import { searchStyles } from '@/constants/NativeWindStyles';
+
+const TEXT = {
+  TITLES: {
+    STEP_1: 'Join Another Apartment',
+    STEP_2: 'Find Building',
+    SUCCESS: 'Success!',
+    ERROR: 'Oops!',
+  },
+  MESSAGES: {
+    LOAD_ERROR: 'Failed to load buildings. Please try again.',
+    JOIN_DEFAULT_ERROR: 'Failed to join building. Please try again.',
+    JOIN_SUCCESS: (name: string) => `You have successfully joined ${name || 'the building'}!`,
+  },
+};
 
 interface BuildingDiscoveryProps {
   onBack?: () => void;
@@ -12,7 +31,6 @@ interface BuildingDiscoveryProps {
 }
 
 export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryProps) {
-  // State for Wizard Flow
   const [step, setStep] = useState<number>(1);
   const navigation = useNavigation();
 
@@ -23,6 +41,17 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
 
   // State for Search (Step 2)
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+
+  // Dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // --- HANDLERS ---
   const handleCountryChange = (value: string) => {
@@ -36,10 +65,83 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     setSelectedCity('');
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (selectedCountry && selectedProvince && selectedCity) {
-      setStep(2);
+      setLoading(true);
+      setError('');
+      try {
+        // Fetch buildings for selected location
+        const results = await buildingService.searchBuildings({
+          city: selectedCity,
+          // Note: frontend uses "province" but backend uses "state"
+          state: selectedProvince,
+        });
+        setBuildings(results);
+        setStep(2);
+      } catch (err) {
+        setError(TEXT.MESSAGES.LOAD_ERROR);
+      } finally {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleJoinBuilding = (buildingId: string) => {
+    // Find the selected building
+    const building = buildings.find(b => b.buildingId === buildingId);
+    if (!building) return;
+
+    setSelectedBuilding(building);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmJoin = async () => {
+    if (!selectedBuilding) return;
+
+    setLoading(true);
+    try {
+      // Call joinBuilding mutation and wait for response
+      await apolloClient.mutate({
+        mutation: JOIN_BUILDING,
+        variables: { buildingId: selectedBuilding.buildingId },
+      });
+    
+      setShowConfirmDialog(false);
+      
+      setSuccessMessage(TEXT.MESSAGES.JOIN_SUCCESS(selectedBuilding.name || ''));
+      setShowSuccessDialog(true);
+
+    } catch (err: any) {
+      console.error('Failed to join building:', err);
+      setShowConfirmDialog(false);
+      
+      // Extract error message from GraphQL error
+      let errMsg = TEXT.MESSAGES.JOIN_DEFAULT_ERROR;
+      if (err.graphQLErrors && err.graphQLErrors.length > 0) {
+        errMsg = err.graphQLErrors[0].message;
+      } else if (err.message) {
+        errMsg = err.message;
+      }
+      
+      // Show error dialog
+      setErrorMessage(errMsg);
+      setShowErrorDialog(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuccessConfirm = () => {
+    setShowSuccessDialog(false);
+    setSelectedBuilding(null);
+    
+    // Navigate to home page
+    router.push('/(tabs)');
+  };
+
+  const handleCancelJoin = () => {
+    setShowConfirmDialog(false);
+    setSelectedBuilding(null);
   };
 
   // Keep track of step in a ref to access inside listener without re-binding
@@ -71,24 +173,21 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     };
   }, [navigation, onBack]); // Listener is now stable across step changes
 
-  // --- FILTER LOGIC ---
-  const filteredBuildings = MOCK_BUILDINGS.filter(b => {
-    const matchesLocation =
-      (!selectedProvince || b.province === selectedProvince) &&
-      (!selectedCity || b.city === selectedCity);
-
-    const matchesQuery =
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.address.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesLocation && matchesQuery;
-  });
+  const filteredBuildings = useMemo(() => {
+    return buildings.filter(b => {
+      const matchesQuery =
+        searchQuery === '' ||
+        b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.address.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesQuery;
+    });
+  }, [buildings, searchQuery]);
 
   return (
     <View className={searchStyles.pageContainer}>
       <Stack.Screen
         options={{
-          headerTitle: step === 1 ? 'Join Another Apartment' : 'Find Building',
+          headerTitle: step === 1 ? TEXT.TITLES.STEP_1 : TEXT.TITLES.STEP_2,
           headerBackTitle: "",
         }}
       />
@@ -103,6 +202,8 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
           onProvinceChange={handleProvinceChange}
           onCityChange={setSelectedCity}
           onNext={handleNextStep}
+          error={error}
+          isLoading={loading}
         />
       )}
 
@@ -115,9 +216,38 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
           onSearchChange={setSearchQuery}
           filteredBuildings={filteredBuildings}
           onChangeLocation={() => setStep(1)}
-          onJoin={onJoin}
+          onJoin={handleJoinBuilding}
         />
       )}
+
+      {selectedBuilding && (
+        <ConfirmJoinDialog
+          visible={showConfirmDialog}
+          buildingName={selectedBuilding.name}
+          address={selectedBuilding.address}
+          memberCount={selectedBuilding.memberCount}
+          onConfirm={handleConfirmJoin}
+          onCancel={handleCancelJoin}
+          loading={loading}
+        />
+      )}
+
+      <SuccessDialog
+        visible={showSuccessDialog}
+        title={TEXT.TITLES.SUCCESS}
+        message={successMessage}
+        onConfirm={handleSuccessConfirm}
+      />
+
+      <ErrorDialog
+        visible={showErrorDialog}
+        title={TEXT.TITLES.ERROR}
+        message={errorMessage}
+        onConfirm={() => {
+          setShowErrorDialog(false);
+          setSelectedBuilding(null);
+        }}
+      />
     </View>
   );
 }
