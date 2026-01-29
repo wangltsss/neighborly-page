@@ -91,7 +91,7 @@ const api = new appsync.GraphqlApi(authCdkStack, 'Api', {
 
 // S3 Media Bucket (created in AuthStack for simplicity)
 const mediaBucket = new s3.Bucket(authCdkStack, 'MediaBucket', {
-  bucketName: `${neighborlyConfig.fullResourcePrefix}-media-${neighborlyConfig.awsAccountId}`,
+  bucketName: `${neighborlyConfig.fullResourcePrefix}-media-${neighborlyConfig.awsAccountId}`.toLowerCase(),
   blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
   encryption: s3.BucketEncryption.S3_MANAGED,
   cors: [
