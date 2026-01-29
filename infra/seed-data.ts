@@ -77,17 +77,14 @@ const dynamoClient = new DynamoDBClient({ region: CONFIG.region });
 const TEST_DATA = {
   users: [
     {
-      userId: 'a468c4e8-90b1-7002-d22e-bd1fae4cf1d6',
       email: 'alice@neighborly.app',
       username: 'alice',
     },
     {
-      userId: '34088438-d031-702e-5120-02d8612c2284',
       email: 'bob@neighborly.app',
       username: 'bob',
     },
     {
-      userId: '74c8e4e8-3091-7033-59db-88f6d9bc4f6d',
       email: 'charlie@neighborly.app',
       username: 'charlie',
     },
