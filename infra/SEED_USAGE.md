@@ -62,13 +62,13 @@ Users are associated with 1-2 random buildings
 
 - AWS credentials configured
 - Stacks deployed (Auth, Building, Messaging)
-- `.env` file with `USER_POOL_ID=<Your User pool ID>`
+- `.env` file with `USER_POOL_ID=<user-pool-id>`
 
 ## Troubleshooting
 
 **Error: USER_POOL_ID not found**
 
-- Add to `infra/.env`: `USER_POOL_ID=<Your User pool ID>`
+- Add to `infra/.env`: `USER_POOL_ID=<user-pool-id>`
 
 **Permission errors**
 

@@ -16,10 +16,10 @@ const env = {
   region: neighborlyConfig.awsRegion,
 };
 
-// Stack name prefix based on developer name
-const stackPrefix = neighborlyConfig.developerName 
-  ? `${neighborlyConfig.developerName}-`
-  : 'Neighborly-';
+// Stack name prefix based on configuration
+// Dev: {DeveloperName}-{ResourcePrefix}-
+// Prod: {ResourcePrefix}-
+const stackPrefix = `${neighborlyConfig.fullResourcePrefix}-`;
 
 // ============================================
 // AUTH STACK - Authentication + User Profiles
@@ -62,7 +62,7 @@ const building = new BuildingStack(buildingCdkStack, 'Building', {
 // ============================================
 // AppSync API (needs UserPool from AuthStack)
 const api = new appsync.GraphqlApi(authCdkStack, 'Api', {
-  name: `${neighborlyConfig.resourcePrefix}-api`,
+  name: `${neighborlyConfig.fullResourcePrefix}-api`,
   schema: appsync.SchemaFile.fromAsset(
     path.join(__dirname, '../lib/graphql', 'schema.graphql')
   ),
@@ -91,7 +91,7 @@ const api = new appsync.GraphqlApi(authCdkStack, 'Api', {
 
 // S3 Media Bucket (created in AuthStack for simplicity)
 const mediaBucket = new s3.Bucket(authCdkStack, 'MediaBucket', {
-  bucketName: `${neighborlyConfig.resourcePrefix}-media-${neighborlyConfig.awsAccountId}`,
+  bucketName: `${neighborlyConfig.fullResourcePrefix}-media-${neighborlyConfig.awsAccountId}`,
   blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
   encryption: s3.BucketEncryption.S3_MANAGED,
   cors: [
@@ -270,7 +270,7 @@ userChannelStateDataSource.createResolver('UpdateLastReadResolver', {
 new cdk.CfnOutput(authCdkStack, 'ApiUrl', {
   value: api.graphqlUrl,
   description: 'AppSync GraphQL API URL',
-  exportName: `${neighborlyConfig.resourcePrefix}-api-url`,
+  exportName: `${neighborlyConfig.fullResourcePrefix}-api-url`,
 });
 
 new cdk.CfnOutput(authCdkStack, 'ApiId', {
@@ -281,13 +281,13 @@ new cdk.CfnOutput(authCdkStack, 'ApiId', {
 new cdk.CfnOutput(authCdkStack, 'ApiKey', {
   value: api.apiKey || 'N/A',
   description: 'AppSync API Key (for testing)',
-  exportName: `${neighborlyConfig.resourcePrefix}-api-key`,
+  exportName: `${neighborlyConfig.fullResourcePrefix}-api-key`,
 });
 
 new cdk.CfnOutput(authCdkStack, 'MediaBucketName', {
   value: mediaBucket.bucketName,
   description: 'S3 Media Bucket Name',
-  exportName: `${neighborlyConfig.resourcePrefix}-media-bucket`,
+  exportName: `${neighborlyConfig.fullResourcePrefix}-media-bucket`,
 });
 
 app.synth();

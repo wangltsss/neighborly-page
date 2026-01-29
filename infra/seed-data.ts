@@ -38,14 +38,25 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const CONFIG = {
   region: process.env.AWS_REGION || 'us-east-1',
   resourcePrefix: process.env.RESOURCE_PREFIX || 'neighborly',
+  developerName: process.env.DEVELOPER_NAME,
   userPoolId: process.env.USER_POOL_ID || '',
   
-  tables: {
-    users: `${process.env.RESOURCE_PREFIX || 'neighborly'}-users`,
-    buildings: `${process.env.RESOURCE_PREFIX || 'neighborly'}-buildings`,
-    channels: `${process.env.RESOURCE_PREFIX || 'neighborly'}-channels`,
-    messages: `${process.env.RESOURCE_PREFIX || 'neighborly'}-messages`,
+  // Computed helpers
+  get fullPrefix() {
+    return this.developerName 
+      ? `${this.developerName}-${this.resourcePrefix}` 
+      : this.resourcePrefix;
   },
+  
+  get tables() {
+    const p = this.fullPrefix;
+    return {
+      users: `${p}-users`,
+      buildings: `${p}-buildings`,
+      channels: `${p}-channels`,
+      messages: `${p}-messages`,
+    };
+  }
 };
 
 // Command line args
