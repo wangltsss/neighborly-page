@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button, View } from 'react-native';
 import { Stack, useNavigation, router } from 'expo-router';
 import { LocationWizard } from '@/components/search/LocationWizard';
@@ -11,13 +11,26 @@ import { SuccessDialog } from '@/components/common/SuccessDialog';
 import { ErrorDialog } from '@/components/common/ErrorDialog';
 import { searchStyles } from '@/constants/NativeWindStyles';
 
+const TEXT = {
+  TITLES: {
+    STEP_1: 'Join Another Apartment',
+    STEP_2: 'Find Building',
+    SUCCESS: 'Success!',
+    ERROR: 'Oops!',
+  },
+  MESSAGES: {
+    LOAD_ERROR: 'Failed to load buildings. Please try again.',
+    JOIN_DEFAULT_ERROR: 'Failed to join building. Please try again.',
+    JOIN_SUCCESS: (name: string) => `You have successfully joined ${name || 'the building'}!`,
+  },
+};
+
 interface BuildingDiscoveryProps {
   onBack?: () => void;
   onJoin?: (buildingId: string) => void;
 }
 
 export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryProps) {
-  // State for Wizard Flow
   const [step, setStep] = useState<number>(1);
   const navigation = useNavigation();
 
@@ -60,12 +73,13 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
         // Fetch buildings for selected location
         const results = await buildingService.searchBuildings({
           city: selectedCity,
-          state: selectedProvince, // Note: frontend uses "province" but backend uses "state"
+          // Note: frontend uses "province" but backend uses "state"
+          state: selectedProvince,
         });
         setBuildings(results);
         setStep(2);
       } catch (err) {
-        setError('Failed to load buildings. Please try again.');
+        setError(TEXT.MESSAGES.LOAD_ERROR);
       } finally {
         setLoading(false);
       }
@@ -77,7 +91,6 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     const building = buildings.find(b => b.buildingId === buildingId);
     if (!building) return;
 
-    // Show custom confirmation dialog
     setSelectedBuilding(building);
     setShowConfirmDialog(true);
   };
@@ -92,19 +105,18 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
         mutation: JOIN_BUILDING,
         variables: { buildingId: selectedBuilding.buildingId },
       });
-
-      // Close confirm dialog
+    
       setShowConfirmDialog(false);
       
-      // Show success dialog
-      setSuccessMessage(`You have successfully joined ${selectedBuilding.name || 'the building'}!`);
+      setSuccessMessage(TEXT.MESSAGES.JOIN_SUCCESS(selectedBuilding.name || ''));
       setShowSuccessDialog(true);
+
     } catch (err: any) {
       console.error('Failed to join building:', err);
       setShowConfirmDialog(false);
       
       // Extract error message from GraphQL error
-      let errMsg = 'Failed to join building. Please try again.';
+      let errMsg = TEXT.MESSAGES.JOIN_DEFAULT_ERROR;
       if (err.graphQLErrors && err.graphQLErrors.length > 0) {
         errMsg = err.graphQLErrors[0].message;
       } else if (err.message) {
@@ -161,20 +173,21 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
     };
   }, [navigation, onBack]); // Listener is now stable across step changes
 
-  // --- FILTER LOGIC ---
-  const filteredBuildings = buildings.filter(b => {
-    const matchesQuery =
-      searchQuery === '' ||
-      b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.address.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesQuery;
-  });
+  const filteredBuildings = useMemo(() => {
+    return buildings.filter(b => {
+      const matchesQuery =
+        searchQuery === '' ||
+        b.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.address.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesQuery;
+    });
+  }, [buildings, searchQuery]);
 
   return (
     <View className={searchStyles.pageContainer}>
       <Stack.Screen
         options={{
-          headerTitle: step === 1 ? 'Join Another Apartment' : 'Find Building',
+          headerTitle: step === 1 ? TEXT.TITLES.STEP_1 : TEXT.TITLES.STEP_2,
           headerBackTitle: "",
         }}
       />
@@ -205,7 +218,6 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
         />
       )}
 
-      {/* Confirm Join Dialog */}
       {selectedBuilding && (
         <ConfirmJoinDialog
           visible={showConfirmDialog}
@@ -218,19 +230,16 @@ export default function BuildingDiscovery({ onBack, onJoin }: BuildingDiscoveryP
         />
       )}
 
-
-      {/* Success Dialog */}
       <SuccessDialog
         visible={showSuccessDialog}
-        title="Success!"
+        title={TEXT.TITLES.SUCCESS}
         message={successMessage}
         onConfirm={handleSuccessConfirm}
       />
 
-      {/* Error Dialog */}
       <ErrorDialog
         visible={showErrorDialog}
-        title="Oops!"
+        title={TEXT.TITLES.ERROR}
         message={errorMessage}
         onConfirm={() => {
           setShowErrorDialog(false);

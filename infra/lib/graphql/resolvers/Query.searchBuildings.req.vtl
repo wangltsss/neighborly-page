@@ -13,6 +13,7 @@
       ":state": $util.dynamodb.toDynamoDBJson($ctx.args.state)
     }
   },
+  "limit": 1000,
   #if($ctx.args.addressFilter)
   "filter": {
     "expression": "contains(#address, :filter) OR contains(#name, :filter)",
