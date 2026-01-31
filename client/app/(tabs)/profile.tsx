@@ -129,11 +129,12 @@ export default function ProfileScreen() {
   };
 
   const handleUsernameSave = () => {
-    if (!editUsername.trim()) {
-      showToast('Username cannot be empty', 'error');
+    const trimmed = editUsername.trim();
+    if (!trimmed) {
+      setEditingField(null);
       return;
     }
-    updateUser({ variables: { username: editUsername.trim() } });
+    updateUser({ variables: { username: trimmed } });
   };
 
   const handlePronounSave = () => {
