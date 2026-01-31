@@ -42,12 +42,12 @@ export default function ProfileScreen() {
   const { showToast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingField, setEditingField] = useState<'username' | 'pronoun' | null>(null);
   const [editUsername, setEditUsername] = useState('');
+  const [editPronoun, setEditPronoun] = useState('');
   const [isEditingAboutMe, setIsEditingAboutMe] = useState(false);
   const [editAboutMe, setEditAboutMe] = useState('');
-  const [isEditingPronoun, setIsEditingPronoun] = useState(false);
-  const [editPronoun, setEditPronoun] = useState('');
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -84,9 +84,8 @@ export default function ProfileScreen() {
   const [updateUser, { loading: updating }] = useMutation(UPDATE_USER, {
     onCompleted: () => {
       showToast('Profile updated successfully', 'success');
-      setIsEditing(false);
+      setEditingField(null);
       setIsEditingAboutMe(false);
-      setIsEditingPronoun(false);
       refetch();
     },
     onError: (err) => {
@@ -106,22 +105,39 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
-  const handleEditStart = () => {
-    setEditUsername(data?.getUser?.username || '');
-    setIsEditing(true);
+  const handleToggleEditMode = () => {
+    if (isEditMode) {
+      setIsEditMode(false);
+      setEditingField(null);
+    } else {
+      setIsEditMode(true);
+    }
   };
 
-  const handleEditCancel = () => {
-    setIsEditing(false);
-    setEditUsername('');
+  const handleFieldTap = (field: 'username' | 'pronoun') => {
+    if (!isEditMode) return;
+    if (field === 'username') {
+      setEditUsername(data?.getUser?.username || '');
+    } else {
+      setEditPronoun(data?.getUser?.pronoun || '');
+    }
+    setEditingField(field);
   };
 
-  const handleEditSave = () => {
+  const handleFieldCancel = () => {
+    setEditingField(null);
+  };
+
+  const handleUsernameSave = () => {
     if (!editUsername.trim()) {
       showToast('Username cannot be empty', 'error');
       return;
     }
     updateUser({ variables: { username: editUsername.trim() } });
+  };
+
+  const handlePronounSave = () => {
+    updateUser({ variables: { pronoun: editPronoun.trim() } });
   };
 
   const handleAboutMeEditStart = () => {
@@ -136,20 +152,6 @@ export default function ProfileScreen() {
 
   const handleAboutMeEditSave = () => {
     updateUser({ variables: { aboutMe: editAboutMe.trim() } });
-  };
-
-  const handlePronounEditStart = () => {
-    setEditPronoun(data?.getUser?.pronoun || '');
-    setIsEditingPronoun(true);
-  };
-
-  const handlePronounEditCancel = () => {
-    setIsEditingPronoun(false);
-    setEditPronoun('');
-  };
-
-  const handlePronounEditSave = () => {
-    updateUser({ variables: { pronoun: editPronoun.trim() } });
   };
 
   const handleAvatarPick = async () => {
@@ -281,11 +283,13 @@ export default function ProfileScreen() {
       >
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Account Information</Text>
-          {!isEditing && (
-            <Pressable onPress={handleEditStart} style={styles.editButton}>
+          <Pressable onPress={handleToggleEditMode} style={styles.editButton}>
+            {isEditMode ? (
+              <X size={18} color={AppColors.primary} />
+            ) : (
               <Pencil size={18} color={AppColors.primary} />
-            </Pressable>
-          )}
+            )}
+          </Pressable>
         </View>
 
         <View style={styles.infoRow}>
@@ -304,7 +308,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.infoContent}>
             <Text style={styles.infoLabel}>Username</Text>
-            {isEditing ? (
+            {editingField === 'username' ? (
               <View style={styles.editRow}>
                 <TextInput
                   style={styles.editInput}
@@ -316,7 +320,7 @@ export default function ProfileScreen() {
                   editable={!updating}
                 />
                 <Pressable
-                  onPress={handleEditSave}
+                  onPress={handleUsernameSave}
                   style={[styles.actionButton, styles.saveButton]}
                   disabled={updating}
                 >
@@ -327,15 +331,21 @@ export default function ProfileScreen() {
                   )}
                 </Pressable>
                 <Pressable
-                  onPress={handleEditCancel}
+                  onPress={handleFieldCancel}
                   style={[styles.actionButton, styles.cancelButton]}
                   disabled={updating}
                 >
                   <X size={18} color={AppColors.white} />
                 </Pressable>
               </View>
+            ) : isEditMode ? (
+              <Pressable onPress={() => handleFieldTap('username')}>
+                <Text style={user?.username ? styles.infoValue : styles.infoPlaceholder}>
+                  {user?.username || 'Not set'}
+                </Text>
+              </Pressable>
             ) : (
-              <Text style={styles.infoValue}>
+              <Text style={user?.username ? styles.infoValue : styles.infoPlaceholder}>
                 {user?.username || 'Not set'}
               </Text>
             )}
@@ -348,7 +358,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.infoContent}>
             <Text style={styles.infoLabel}>Pronoun</Text>
-            {isEditingPronoun ? (
+            {editingField === 'pronoun' ? (
               <View style={styles.editRow}>
                 <TextInput
                   style={styles.editInput}
@@ -360,7 +370,7 @@ export default function ProfileScreen() {
                   editable={!updating}
                 />
                 <Pressable
-                  onPress={handlePronounEditSave}
+                  onPress={handlePronounSave}
                   style={[styles.actionButton, styles.saveButton]}
                   disabled={updating}
                 >
@@ -371,19 +381,23 @@ export default function ProfileScreen() {
                   )}
                 </Pressable>
                 <Pressable
-                  onPress={handlePronounEditCancel}
+                  onPress={handleFieldCancel}
                   style={[styles.actionButton, styles.cancelButton]}
                   disabled={updating}
                 >
                   <X size={18} color={AppColors.white} />
                 </Pressable>
               </View>
-            ) : (
-              <Pressable onPress={handlePronounEditStart}>
+            ) : isEditMode ? (
+              <Pressable onPress={() => handleFieldTap('pronoun')}>
                 <Text style={user?.pronoun ? styles.infoValue : styles.infoPlaceholder}>
                   {user?.pronoun || 'Not set'}
                 </Text>
               </Pressable>
+            ) : (
+              <Text style={user?.pronoun ? styles.infoValue : styles.infoPlaceholder}>
+                {user?.pronoun || 'Not set'}
+              </Text>
             )}
           </View>
         </View>
