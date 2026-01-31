@@ -50,15 +50,18 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
             throw new RuntimeException("Unauthorized: No user identity");
         }
 
-        // Get the username from arguments
+        // Get arguments
         Map<String, Object> arguments = event.getArguments();
         String newUsername = (String) arguments.get("username");
+        String newAboutMe = (String) arguments.get("aboutMe");
+        String newPronoun = (String) arguments.get("pronoun");
+        String newAvatarUrl = (String) arguments.get("avatarUrl");
 
-        if (newUsername == null || newUsername.trim().isEmpty()) {
-            throw new RuntimeException("Username cannot be empty");
+        if ((newUsername == null || newUsername.trim().isEmpty()) && newAboutMe == null && newPronoun == null && newAvatarUrl == null) {
+            throw new RuntimeException("At least one field must be provided for update");
         }
 
-        logger.info("Updating username for user: {} to: {}", userId, newUsername);
+        logger.info("Updating profile for user: {}", userId);
 
         try {
             // Update the user in DynamoDB
@@ -66,10 +69,30 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
             key.put("userId", AttributeValue.builder().s(userId).build());
 
             Map<String, AttributeValueUpdate> updates = new HashMap<>();
-            updates.put("username", AttributeValueUpdate.builder()
-                    .value(AttributeValue.builder().s(newUsername.trim()).build())
-                    .action(AttributeAction.PUT)
-                    .build());
+            if (newUsername != null && !newUsername.trim().isEmpty()) {
+                updates.put("username", AttributeValueUpdate.builder()
+                        .value(AttributeValue.builder().s(newUsername.trim()).build())
+                        .action(AttributeAction.PUT)
+                        .build());
+            }
+            if (newAboutMe != null) {
+                updates.put("aboutMe", AttributeValueUpdate.builder()
+                        .value(AttributeValue.builder().s(newAboutMe.trim()).build())
+                        .action(AttributeAction.PUT)
+                        .build());
+            }
+            if (newPronoun != null) {
+                updates.put("pronoun", AttributeValueUpdate.builder()
+                        .value(AttributeValue.builder().s(newPronoun.trim()).build())
+                        .action(AttributeAction.PUT)
+                        .build());
+            }
+            if (newAvatarUrl != null) {
+                updates.put("avatarUrl", AttributeValueUpdate.builder()
+                        .value(AttributeValue.builder().s(newAvatarUrl).build())
+                        .action(AttributeAction.PUT)
+                        .build());
+            }
 
             UpdateItemRequest updateRequest = UpdateItemRequest.builder()
                     .tableName(tableName)
@@ -104,6 +127,15 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
         }
         if (item.containsKey("username")) {
             user.setUsername(item.get("username").s());
+        }
+        if (item.containsKey("aboutMe")) {
+            user.setAboutMe(item.get("aboutMe").s());
+        }
+        if (item.containsKey("pronoun")) {
+            user.setPronoun(item.get("pronoun").s());
+        }
+        if (item.containsKey("avatarUrl")) {
+            user.setAvatarUrl(item.get("avatarUrl").s());
         }
         if (item.containsKey("createdTime")) {
             user.setCreatedTime(item.get("createdTime").s());

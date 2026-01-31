@@ -93,6 +93,15 @@ public class GetUserHandler implements RequestHandler<AppSyncEvent, User> {
         if (item.containsKey("username")) {
             user.setUsername(item.get("username").s());
         }
+        if (item.containsKey("aboutMe")) {
+            user.setAboutMe(item.get("aboutMe").s());
+        }
+        if (item.containsKey("pronoun")) {
+            user.setPronoun(item.get("pronoun").s());
+        }
+        if (item.containsKey("avatarUrl")) {
+            user.setAvatarUrl(item.get("avatarUrl").s());
+        }
         if (item.containsKey("createdTime")) {
             user.setCreatedTime(item.get("createdTime").s());
         }

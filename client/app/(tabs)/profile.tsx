@@ -6,10 +6,12 @@ import {
   RefreshControl,
   TextInput,
   Pressable,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client';
-import { User, Mail, Calendar, Building2, Pencil, Check, X } from 'lucide-react-native';
+import { User, Mail, FileText, Camera, Pencil, Check, X } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Text, View } from '@/components/Themed';
 import { Button } from '@/components/Button';
@@ -29,6 +31,9 @@ interface UserData {
   userId: string;
   email: string;
   username: string | null;
+  aboutMe: string | null;
+  pronoun: string | null;
+  avatarUrl: string | null;
   joinedBuildings: string[] | null;
   createdTime: string;
 }
@@ -39,6 +44,10 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editUsername, setEditUsername] = useState('');
+  const [isEditingAboutMe, setIsEditingAboutMe] = useState(false);
+  const [editAboutMe, setEditAboutMe] = useState('');
+  const [isEditingPronoun, setIsEditingPronoun] = useState(false);
+  const [editPronoun, setEditPronoun] = useState('');
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -76,6 +85,8 @@ export default function ProfileScreen() {
     onCompleted: () => {
       showToast('Profile updated successfully', 'success');
       setIsEditing(false);
+      setIsEditingAboutMe(false);
+      setIsEditingPronoun(false);
       refetch();
     },
     onError: (err) => {
@@ -111,6 +122,57 @@ export default function ProfileScreen() {
       return;
     }
     updateUser({ variables: { username: editUsername.trim() } });
+  };
+
+  const handleAboutMeEditStart = () => {
+    setEditAboutMe(data?.getUser?.aboutMe || '');
+    setIsEditingAboutMe(true);
+  };
+
+  const handleAboutMeEditCancel = () => {
+    setIsEditingAboutMe(false);
+    setEditAboutMe('');
+  };
+
+  const handleAboutMeEditSave = () => {
+    updateUser({ variables: { aboutMe: editAboutMe.trim() } });
+  };
+
+  const handlePronounEditStart = () => {
+    setEditPronoun(data?.getUser?.pronoun || '');
+    setIsEditingPronoun(true);
+  };
+
+  const handlePronounEditCancel = () => {
+    setIsEditingPronoun(false);
+    setEditPronoun('');
+  };
+
+  const handlePronounEditSave = () => {
+    updateUser({ variables: { pronoun: editPronoun.trim() } });
+  };
+
+  const handleAvatarPick = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      showToast('Permission to access photos is required', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const asset = result.assets[0];
+      const mimeType = asset.mimeType || 'image/jpeg';
+      const dataUri = `data:${mimeType};base64,${asset.base64}`;
+      updateUser({ variables: { avatarUrl: dataUri } });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -191,11 +253,18 @@ export default function ProfileScreen() {
         lightColor={AppColors.white}
         darkColor={AppColors.darkCard}
       >
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <User size={48} color={AppColors.white} />
+        <Pressable onPress={handleAvatarPick} style={styles.avatarContainer}>
+          {user?.avatarUrl ? (
+            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <User size={48} color={AppColors.white} />
+            </View>
+          )}
+          <View style={styles.avatarOverlay}>
+            <Camera size={16} color={AppColors.white} />
           </View>
-        </View>
+        </Pressable>
         <Text style={styles.username}>
           {user?.username || 'Neighbor'}
         </Text>
@@ -275,49 +344,109 @@ export default function ProfileScreen() {
 
         <View style={styles.infoRow}>
           <View style={styles.infoIcon}>
-            <Calendar size={20} color={AppColors.primary} />
+            <User size={20} color={AppColors.primary} />
           </View>
           <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>Joined</Text>
-            <Text style={styles.infoValue}>
-              {user?.createdTime ? formatDate(user.createdTime) : '...'}
-            </Text>
+            <Text style={styles.infoLabel}>Pronoun</Text>
+            {isEditingPronoun ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.editInput}
+                  value={editPronoun}
+                  onChangeText={setEditPronoun}
+                  placeholder="e.g. she/her, he/him, they/them"
+                  placeholderTextColor={AppColors.placeholder}
+                  autoFocus
+                  editable={!updating}
+                />
+                <Pressable
+                  onPress={handlePronounEditSave}
+                  style={[styles.actionButton, styles.saveButton]}
+                  disabled={updating}
+                >
+                  {updating ? (
+                    <ActivityIndicator size="small" color={AppColors.white} />
+                  ) : (
+                    <Check size={18} color={AppColors.white} />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={handlePronounEditCancel}
+                  style={[styles.actionButton, styles.cancelButton]}
+                  disabled={updating}
+                >
+                  <X size={18} color={AppColors.white} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={handlePronounEditStart}>
+                <Text style={user?.pronoun ? styles.infoValue : styles.infoPlaceholder}>
+                  {user?.pronoun || 'Not set'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
 
-      {/* Buildings Section */}
+      {/* About Me Section */}
       <View
         style={styles.sectionCard}
         lightColor={AppColors.white}
         darkColor={AppColors.darkCard}
       >
-        <Text style={styles.sectionTitle}>My Buildings</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>About Me</Text>
+          {!isEditingAboutMe && (
+            <Pressable onPress={handleAboutMeEditStart} style={styles.editButton}>
+              <Pencil size={18} color={AppColors.primary} />
+            </Pressable>
+          )}
+        </View>
 
-        {user?.joinedBuildings && user.joinedBuildings.length > 0 ? (
-          user.joinedBuildings.map((buildingId, index) => (
-            <View key={buildingId} style={styles.buildingRow}>
-              <View style={styles.infoIcon}>
-                <Building2 size={20} color={AppColors.primary} />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoValue}>Building {index + 1}</Text>
-                <Text style={styles.buildingId}>{buildingId}</Text>
-              </View>
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Building2 size={32} color={AppColors.placeholder} />
-            <Text style={styles.emptyText}>
-              You haven't joined any buildings yet
-            </Text>
-            <Button
-              title="Join a Building"
-              variant="secondary"
-              onPress={() => router.push('/search')}
-              style={styles.joinButton}
+        {isEditingAboutMe ? (
+          <View>
+            <TextInput
+              style={styles.aboutMeInput}
+              value={editAboutMe}
+              onChangeText={setEditAboutMe}
+              placeholder="Tell your neighbors about yourself..."
+              placeholderTextColor={AppColors.placeholder}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              autoFocus
+              editable={!updating}
             />
+            <View style={styles.aboutMeActions}>
+              <Pressable
+                onPress={handleAboutMeEditSave}
+                style={[styles.actionButton, styles.saveButton]}
+                disabled={updating}
+              >
+                {updating ? (
+                  <ActivityIndicator size="small" color={AppColors.white} />
+                ) : (
+                  <Check size={18} color={AppColors.white} />
+                )}
+              </Pressable>
+              <Pressable
+                onPress={handleAboutMeEditCancel}
+                style={[styles.actionButton, styles.cancelButton]}
+                disabled={updating}
+              >
+                <X size={18} color={AppColors.white} />
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.aboutMeContent}>
+            <View style={styles.infoIcon}>
+              <FileText size={20} color={AppColors.primary} />
+            </View>
+            <Text style={user?.aboutMe ? styles.infoValue : styles.aboutMePlaceholder}>
+              {user?.aboutMe || 'Tell your neighbors about yourself...'}
+            </Text>
           </View>
         )}
       </View>
@@ -388,6 +517,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: Spacing.md,
+    position: 'relative',
   },
   avatar: {
     width: 96,
@@ -396,6 +526,24 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: AppColors.white,
   },
   username: {
     fontSize: FontSize.xl,
@@ -453,6 +601,10 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: '500',
   },
+  infoPlaceholder: {
+    fontSize: FontSize.md,
+    color: AppColors.placeholder,
+  },
   editRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -482,31 +634,28 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: '#DC2626',
   },
-  buildingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  aboutMeInput: {
+    fontSize: FontSize.md,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
+    minHeight: 100,
   },
-  buildingId: {
-    fontSize: FontSize.xs,
-    color: AppColors.placeholder,
-    fontFamily: 'monospace',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xl,
-  },
-  emptyText: {
-    fontSize: FontSize.sm,
-    color: AppColors.placeholder,
+  aboutMeActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
   },
-  joinButton: {
-    minWidth: 150,
+  aboutMeContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  aboutMePlaceholder: {
+    fontSize: FontSize.md,
+    color: AppColors.placeholder,
+    flex: 1,
   },
   logoutSection: {
     marginTop: Spacing.md,

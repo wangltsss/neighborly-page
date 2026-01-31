@@ -45,6 +45,9 @@ export const GET_USER = gql`
       userId
       email
       username
+      aboutMe
+      pronoun
+      avatarUrl
       joinedBuildings
       createdTime
     }
