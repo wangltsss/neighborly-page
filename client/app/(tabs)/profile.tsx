@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client';
-import { User, Mail, Calendar, Building2, Pencil, Check, X } from 'lucide-react-native';
+import { User, Mail, Calendar, Pencil, Check, X } from 'lucide-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { Button } from '@/components/Button';
@@ -286,42 +286,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Buildings Section */}
-      <View
-        style={styles.sectionCard}
-        lightColor={AppColors.white}
-        darkColor={AppColors.darkCard}
-      >
-        <Text style={styles.sectionTitle}>My Buildings</Text>
-
-        {user?.joinedBuildings && user.joinedBuildings.length > 0 ? (
-          user.joinedBuildings.map((buildingId, index) => (
-            <View key={buildingId} style={styles.buildingRow}>
-              <View style={styles.infoIcon}>
-                <Building2 size={20} color={AppColors.primary} />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoValue}>Building {index + 1}</Text>
-                <Text style={styles.buildingId}>{buildingId}</Text>
-              </View>
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Building2 size={32} color={AppColors.placeholder} />
-            <Text style={styles.emptyText}>
-              You haven't joined any buildings yet
-            </Text>
-            <Button
-              title="Join a Building"
-              variant="secondary"
-              onPress={() => router.push('/search')}
-              style={styles.joinButton}
-            />
-          </View>
-        )}
-      </View>
-
       {/* Logout Button */}
       <View style={styles.logoutSection}>
         <Button
@@ -481,32 +445,6 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#DC2626',
-  },
-  buildingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-  },
-  buildingId: {
-    fontSize: FontSize.xs,
-    color: AppColors.placeholder,
-    fontFamily: 'monospace',
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xl,
-  },
-  emptyText: {
-    fontSize: FontSize.sm,
-    color: AppColors.placeholder,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-    textAlign: 'center',
-  },
-  joinButton: {
-    minWidth: 150,
   },
   logoutSection: {
     marginTop: Spacing.md,
