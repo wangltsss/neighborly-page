@@ -29,11 +29,12 @@ export const UPDATE_LAST_READ = gql`
  * Mutation to update user profile
  */
 export const UPDATE_USER = gql`
-  mutation UpdateUser($username: String!) {
-    updateUser(username: $username) {
+  mutation UpdateUser($username: String, $aboutMe: String) {
+    updateUser(username: $username, aboutMe: $aboutMe) {
       userId
       email
       username
+      aboutMe
       joinedBuildings
       createdTime
     }

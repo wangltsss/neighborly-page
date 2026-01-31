@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client';
-import { User, Mail, Calendar, Pencil, Check, X } from 'lucide-react-native';
+import { User, Mail, Calendar, FileText, Pencil, Check, X } from 'lucide-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { Button } from '@/components/Button';
@@ -29,6 +29,7 @@ interface UserData {
   userId: string;
   email: string;
   username: string | null;
+  aboutMe: string | null;
   joinedBuildings: string[] | null;
   createdTime: string;
 }
@@ -39,6 +40,8 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editUsername, setEditUsername] = useState('');
+  const [isEditingAboutMe, setIsEditingAboutMe] = useState(false);
+  const [editAboutMe, setEditAboutMe] = useState('');
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function ProfileScreen() {
     onCompleted: () => {
       showToast('Profile updated successfully', 'success');
       setIsEditing(false);
+      setIsEditingAboutMe(false);
       refetch();
     },
     onError: (err) => {
@@ -111,6 +115,20 @@ export default function ProfileScreen() {
       return;
     }
     updateUser({ variables: { username: editUsername.trim() } });
+  };
+
+  const handleAboutMeEditStart = () => {
+    setEditAboutMe(data?.getUser?.aboutMe || '');
+    setIsEditingAboutMe(true);
+  };
+
+  const handleAboutMeEditCancel = () => {
+    setIsEditingAboutMe(false);
+    setEditAboutMe('');
+  };
+
+  const handleAboutMeEditSave = () => {
+    updateUser({ variables: { aboutMe: editAboutMe.trim() } });
   };
 
   const formatDate = (dateString: string) => {
@@ -286,6 +304,68 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* About Me Section */}
+      <View
+        style={styles.sectionCard}
+        lightColor={AppColors.white}
+        darkColor={AppColors.darkCard}
+      >
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>About Me</Text>
+          {!isEditingAboutMe && (
+            <Pressable onPress={handleAboutMeEditStart} style={styles.editButton}>
+              <Pencil size={18} color={AppColors.primary} />
+            </Pressable>
+          )}
+        </View>
+
+        {isEditingAboutMe ? (
+          <View>
+            <TextInput
+              style={styles.aboutMeInput}
+              value={editAboutMe}
+              onChangeText={setEditAboutMe}
+              placeholder="Tell your neighbors about yourself..."
+              placeholderTextColor={AppColors.placeholder}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              autoFocus
+              editable={!updating}
+            />
+            <View style={styles.aboutMeActions}>
+              <Pressable
+                onPress={handleAboutMeEditSave}
+                style={[styles.actionButton, styles.saveButton]}
+                disabled={updating}
+              >
+                {updating ? (
+                  <ActivityIndicator size="small" color={AppColors.white} />
+                ) : (
+                  <Check size={18} color={AppColors.white} />
+                )}
+              </Pressable>
+              <Pressable
+                onPress={handleAboutMeEditCancel}
+                style={[styles.actionButton, styles.cancelButton]}
+                disabled={updating}
+              >
+                <X size={18} color={AppColors.white} />
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.aboutMeContent}>
+            <View style={styles.infoIcon}>
+              <FileText size={20} color={AppColors.primary} />
+            </View>
+            <Text style={user?.aboutMe ? styles.infoValue : styles.aboutMePlaceholder}>
+              {user?.aboutMe || 'Tell your neighbors about yourself...'}
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* Logout Button */}
       <View style={styles.logoutSection}>
         <Button
@@ -445,6 +525,29 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#DC2626',
+  },
+  aboutMeInput: {
+    fontSize: FontSize.md,
+    borderWidth: 1,
+    borderColor: AppColors.primary,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    minHeight: 100,
+  },
+  aboutMeActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: Spacing.sm,
+  },
+  aboutMeContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  aboutMePlaceholder: {
+    fontSize: FontSize.md,
+    color: AppColors.placeholder,
+    flex: 1,
   },
   logoutSection: {
     marginTop: Spacing.md,
