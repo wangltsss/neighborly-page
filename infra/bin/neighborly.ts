@@ -17,10 +17,10 @@ const env = {
   region: neighborlyConfig.awsRegion,
 };
 
-// Stack name prefix based on developer name
-const stackPrefix = neighborlyConfig.developerName 
-  ? `${neighborlyConfig.developerName}-`
-  : 'Neighborly-';
+// Stack name prefix based on configuration
+// Dev: {DeveloperName}-{ResourcePrefix}-
+// Prod: {ResourcePrefix}-
+const stackPrefix = `${neighborlyConfig.fullResourcePrefix}-`;
 
 // ============================================
 // AUTH STACK - Authentication + User Profiles
@@ -63,7 +63,7 @@ const building = new BuildingStack(buildingCdkStack, 'Building', {
 // ============================================
 // AppSync API (needs UserPool from AuthStack)
 const api = new appsync.GraphqlApi(authCdkStack, 'Api', {
-  name: `${neighborlyConfig.resourcePrefix}-api`,
+  name: `${neighborlyConfig.fullResourcePrefix}-api`,
   schema: appsync.SchemaFile.fromAsset(
     path.join(__dirname, '../lib/graphql', 'schema.graphql')
   ),
@@ -92,7 +92,7 @@ const api = new appsync.GraphqlApi(authCdkStack, 'Api', {
 
 // S3 Media Bucket (created in AuthStack for simplicity)
 const mediaBucket = new s3.Bucket(authCdkStack, 'MediaBucket', {
-  bucketName: `${neighborlyConfig.resourcePrefix}-media-${neighborlyConfig.awsAccountId}`,
+  bucketName: `${neighborlyConfig.fullResourcePrefix}-media-${neighborlyConfig.awsAccountId}`.toLowerCase(),
   blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
   encryption: s3.BucketEncryption.S3_MANAGED,
   cors: [
@@ -188,6 +188,57 @@ buildingsDataSource.createResolver('GetBuildingResolver', {
   responseMappingTemplate: appsync.MappingTemplate.dynamoDbResultItem(),
 });
 
+// Search buildings by location
+buildingsDataSource.createResolver('SearchBuildingsResolver', {
+  typeName: 'Query',
+  fieldName: 'searchBuildings',
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.searchBuildings.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Query.searchBuildings.res.vtl')
+  ),
+});
+
+// Join building mutation - pipeline with 2 functions
+// Function 1: GetItem + check duplicates
+const joinBuildingCheckFunction = new appsync.AppsyncFunction(authCdkStack, 'JoinBuildingCheckFunction', {
+  name: 'joinBuildingCheckFunction',
+  api,
+  dataSource: usersDataSource,
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.res.vtl')
+  ),
+});
+
+// Function 2: Execute UpdateItem
+const joinBuildingUpdateFunction = new appsync.AppsyncFunction(authCdkStack, 'JoinBuildingUpdateFunction', {
+  name: 'joinBuildingUpdateFunction',
+  api,
+  dataSource: usersDataSource,
+  requestMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.func2.req.vtl')
+  ),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.func2.res.vtl')
+  ),
+});
+
+new appsync.Resolver(authCdkStack, 'JoinBuildingResolver', {
+  api,
+  typeName: 'Mutation',
+  fieldName: 'joinBuilding',
+  pipelineConfig: [joinBuildingCheckFunction, joinBuildingUpdateFunction],
+  requestMappingTemplate: appsync.MappingTemplate.fromString('{}'),
+  responseMappingTemplate: appsync.MappingTemplate.fromFile(
+    path.join(__dirname, '../lib/graphql/resolvers/Mutation.joinBuilding.after.vtl')
+  ),
+});
+
+
 channelsDataSource.createResolver('ListChannelsResolver', {
   typeName: 'Query',
   fieldName: 'listChannels',
@@ -242,7 +293,7 @@ updateUserDataSource.createResolver('UpdateUserResolver', {
 new cdk.CfnOutput(authCdkStack, 'ApiUrl', {
   value: api.graphqlUrl,
   description: 'AppSync GraphQL API URL',
-  exportName: `${neighborlyConfig.resourcePrefix}-api-url`,
+  exportName: `${neighborlyConfig.fullResourcePrefix}-api-url`,
 });
 
 new cdk.CfnOutput(authCdkStack, 'ApiId', {
@@ -253,13 +304,13 @@ new cdk.CfnOutput(authCdkStack, 'ApiId', {
 new cdk.CfnOutput(authCdkStack, 'ApiKey', {
   value: api.apiKey || 'N/A',
   description: 'AppSync API Key (for testing)',
-  exportName: `${neighborlyConfig.resourcePrefix}-api-key`,
+  exportName: `${neighborlyConfig.fullResourcePrefix}-api-key`,
 });
 
 new cdk.CfnOutput(authCdkStack, 'MediaBucketName', {
   value: mediaBucket.bucketName,
   description: 'S3 Media Bucket Name',
-  exportName: `${neighborlyConfig.resourcePrefix}-media-bucket`,
+  exportName: `${neighborlyConfig.fullResourcePrefix}-media-bucket`,
 });
 
 app.synth();

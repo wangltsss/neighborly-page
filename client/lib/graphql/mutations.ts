@@ -25,6 +25,12 @@ export const UPDATE_LAST_READ = gql`
   }
 `;
 
+export const JOIN_BUILDING = gql`
+  mutation JoinBuilding($buildingId: ID!) {
+    joinBuilding(buildingId: $buildingId)
+  }
+`;
+
 /**
  * Mutation to update user profile
  */

@@ -13,6 +13,8 @@ interface LocationWizardProps {
     onCountryChange: (val: string) => void;
     onProvinceChange: (val: string) => void;
     onCityChange: (val: string) => void;
+    error?: string;
+    isLoading?: boolean;
     onNext: () => void;
 }
 
@@ -23,6 +25,8 @@ export const LocationWizard: React.FC<LocationWizardProps> = ({
     onCountryChange,
     onProvinceChange,
     onCityChange,
+    error,
+    isLoading,
     onNext
 }) => {
     const isComplete = selectedCountry && selectedProvince && selectedCity;
@@ -71,15 +75,19 @@ export const LocationWizard: React.FC<LocationWizardProps> = ({
                     />
                 </View>
 
+                {error && (
+                    <Text className="text-red-500 text-center mb-4">{error}</Text>
+                )}
+
                 <Pressable
                     onPress={onNext}
-                    disabled={!isComplete}
-                    className={`${searchStyles.continueButtonBase} ${isComplete ? searchStyles.continueButtonActive : searchStyles.continueButtonDisabled}`}
+                    disabled={!isComplete || isLoading}
+                    className={`${searchStyles.continueButtonBase} ${isComplete && !isLoading ? searchStyles.continueButtonActive : searchStyles.continueButtonDisabled}`}
                 >
-                    <Text className={`${searchStyles.continueTextBase} ${isComplete ? searchStyles.continueTextActive : searchStyles.continueTextDisabled}`}>
-                        Continue
+                    <Text className={`${searchStyles.continueTextBase} ${isComplete && !isLoading ? searchStyles.continueTextActive : searchStyles.continueTextDisabled}`}>
+                        {isLoading ? 'Loading...' : 'Continue'}
                     </Text>
-                    <ArrowRight size={20} color={!isComplete ? '#a8b5c9' : 'white'} />
+                    {!isLoading && <ArrowRight size={20} color={!isComplete ? '#a8b5c9' : 'white'} />}
                 </Pressable>
             </View>
         </ScrollView>

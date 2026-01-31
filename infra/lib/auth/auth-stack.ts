@@ -38,7 +38,7 @@ export class AuthStack extends Construct {
 
     // Cognito User Pool - Manages user directory
     this.userPool = new cognito.UserPool(this, 'UserPool', {
-      userPoolName: `${config.resourcePrefix}-user-pool`,
+      userPoolName: `${config.fullResourcePrefix}-user-pool`,
       
       signInAliases: {
         email: true,
@@ -78,7 +78,7 @@ export class AuthStack extends Construct {
     // User Pool Client - Defines how the frontend app interacts
     this.userPoolClient = new cognito.UserPoolClient(this, 'UserPoolClient', {
       userPool: this.userPool,
-      userPoolClientName: `${config.resourcePrefix}-client`,
+      userPoolClientName: `${config.fullResourcePrefix}-client`,
       
       // Enable authentication flows
       authFlows: {
@@ -100,7 +100,7 @@ export class AuthStack extends Construct {
 
     // Identity Pool - Converts Cognito users to AWS IAM roles
     this.identityPool = new cognito.CfnIdentityPool(this, 'IdentityPool', {
-      identityPoolName: `${config.resourcePrefix}-identity-pool`,
+      identityPoolName: `${config.fullResourcePrefix}-identity-pool`,
       
       allowUnauthenticatedIdentities: false,
 
@@ -117,7 +117,7 @@ export class AuthStack extends Construct {
 
     // Users table - Stores user business data
     this.usersTable = new dynamodb.Table(this, 'UsersTable', {
-      tableName: `${config.resourcePrefix}-users`,
+      tableName: `${config.fullResourcePrefix}-users`,
       partitionKey: {
         name: 'userId',
         type: dynamodb.AttributeType.STRING,
@@ -139,7 +139,7 @@ export class AuthStack extends Construct {
 
     // Post-Confirmation trigger - Sync Cognito user to DynamoDB
     const postConfirmationLambda = new lambda.Function(this, 'PostConfirmation', {
-      functionName: `${config.resourcePrefix}-post-confirmation`,
+      functionName: `${config.fullResourcePrefix}-post-confirmation`,
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'index.handler',
       code: lambda.Code.fromInline(`
@@ -192,19 +192,19 @@ export class AuthStack extends Construct {
     new cdk.CfnOutput(this, 'UserPoolId', {
       value: this.userPool.userPoolId,
       description: 'Cognito User Pool ID',
-      exportName: `${config.resourcePrefix}-user-pool-id`,
+      exportName: `${config.fullResourcePrefix}-user-pool-id`,
     });
 
     new cdk.CfnOutput(this, 'UserPoolClientId', {
       value: this.userPoolClient.userPoolClientId,
       description: 'Cognito User Pool Client ID',
-      exportName: `${config.resourcePrefix}-user-pool-client-id`,
+      exportName: `${config.fullResourcePrefix}-user-pool-client-id`,
     });
 
     new cdk.CfnOutput(this, 'IdentityPoolId', {
       value: this.identityPool.ref,
       description: 'Cognito Identity Pool ID',
-      exportName: `${config.resourcePrefix}-identity-pool-id`,
+      exportName: `${config.fullResourcePrefix}-identity-pool-id`,
     });
 
     new cdk.CfnOutput(this, 'UserPoolArn', {
@@ -215,7 +215,7 @@ export class AuthStack extends Construct {
     new cdk.CfnOutput(this, 'UsersTableName', {
       value: this.usersTable.tableName,
       description: 'DynamoDB Users Table Name',
-      exportName: `${config.resourcePrefix}-users-table`,
+      exportName: `${config.fullResourcePrefix}-users-table`,
     });
   }
 }

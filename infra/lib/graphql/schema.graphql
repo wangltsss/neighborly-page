@@ -4,6 +4,9 @@ type Building @aws_api_key @aws_cognito_user_pools {
   buildingId: ID!
   address: String!
   name: String
+  country: String!
+  state: String!
+  city: String!
   memberCount: Int!
   createdTime: AWSDateTime!
 }
@@ -38,9 +41,11 @@ type User @aws_api_key @aws_cognito_user_pools {
 
 type Query {
   getBuilding(buildingId: ID!): Building @aws_api_key @aws_cognito_user_pools
-  searchBuildings(address: String!): [Building!]
-    @aws_api_key
-    @aws_cognito_user_pools
+  searchBuildings(
+    city: String!
+    state: String!
+    addressFilter: String
+  ): [Building!] @aws_api_key @aws_cognito_user_pools
   listChannels(buildingId: ID!): [Channel!] @aws_api_key @aws_cognito_user_pools
   listMessages(
     channelId: ID!
@@ -57,7 +62,7 @@ type MessageConnection @aws_api_key @aws_cognito_user_pools {
 }
 
 type Mutation {
-  joinBuilding(buildingId: ID!): Building @aws_api_key @aws_cognito_user_pools
+  joinBuilding(buildingId: ID!): Boolean! @aws_api_key @aws_cognito_user_pools
   createChannel(buildingId: ID!, name: String!, description: String): Channel
     @aws_api_key
     @aws_cognito_user_pools
