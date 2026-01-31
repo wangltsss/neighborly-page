@@ -10,16 +10,18 @@ public class User {
     private String email;
     private String username;
     private String aboutMe;
+    private String pronoun;
     private List<String> joinedBuildings;
     private String createdTime;
 
     public User() {}
 
-    public User(String userId, String email, String username, String aboutMe, List<String> joinedBuildings, String createdTime) {
+    public User(String userId, String email, String username, String aboutMe, String pronoun, List<String> joinedBuildings, String createdTime) {
         this.userId = userId;
         this.email = email;
         this.username = username;
         this.aboutMe = aboutMe;
+        this.pronoun = pronoun;
         this.joinedBuildings = joinedBuildings;
         this.createdTime = createdTime;
     }
@@ -54,6 +56,14 @@ public class User {
 
     public void setAboutMe(String aboutMe) {
         this.aboutMe = aboutMe;
+    }
+
+    public String getPronoun() {
+        return pronoun;
+    }
+
+    public void setPronoun(String pronoun) {
+        this.pronoun = pronoun;
     }
 
     public List<String> getJoinedBuildings() {

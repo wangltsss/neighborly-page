@@ -30,6 +30,7 @@ type User @aws_api_key @aws_cognito_user_pools {
   email: AWSEmail!
   username: String
   aboutMe: String
+  pronoun: String
   joinedBuildings: [ID!]
   createdTime: AWSDateTime!
 }
@@ -65,7 +66,7 @@ type Mutation {
   updateLastRead(channelId: ID!, lastReadTime: AWSDateTime!): Boolean
     @aws_api_key
     @aws_cognito_user_pools
-  updateUser(username: String, aboutMe: String): User @aws_api_key @aws_cognito_user_pools
+  updateUser(username: String, aboutMe: String, pronoun: String): User @aws_api_key @aws_cognito_user_pools
 }
 
 type Subscription {

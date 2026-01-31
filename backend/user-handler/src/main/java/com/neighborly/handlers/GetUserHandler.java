@@ -96,6 +96,9 @@ public class GetUserHandler implements RequestHandler<AppSyncEvent, User> {
         if (item.containsKey("aboutMe")) {
             user.setAboutMe(item.get("aboutMe").s());
         }
+        if (item.containsKey("pronoun")) {
+            user.setPronoun(item.get("pronoun").s());
+        }
         if (item.containsKey("createdTime")) {
             user.setCreatedTime(item.get("createdTime").s());
         }

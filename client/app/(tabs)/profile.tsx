@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client';
-import { User, Mail, Calendar, FileText, Pencil, Check, X } from 'lucide-react-native';
+import { User, Mail, FileText, Pencil, Check, X } from 'lucide-react-native';
 
 import { Text, View } from '@/components/Themed';
 import { Button } from '@/components/Button';
@@ -30,6 +30,7 @@ interface UserData {
   email: string;
   username: string | null;
   aboutMe: string | null;
+  pronoun: string | null;
   joinedBuildings: string[] | null;
   createdTime: string;
 }
@@ -42,6 +43,8 @@ export default function ProfileScreen() {
   const [editUsername, setEditUsername] = useState('');
   const [isEditingAboutMe, setIsEditingAboutMe] = useState(false);
   const [editAboutMe, setEditAboutMe] = useState('');
+  const [isEditingPronoun, setIsEditingPronoun] = useState(false);
+  const [editPronoun, setEditPronoun] = useState('');
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function ProfileScreen() {
       showToast('Profile updated successfully', 'success');
       setIsEditing(false);
       setIsEditingAboutMe(false);
+      setIsEditingPronoun(false);
       refetch();
     },
     onError: (err) => {
@@ -129,6 +133,20 @@ export default function ProfileScreen() {
 
   const handleAboutMeEditSave = () => {
     updateUser({ variables: { aboutMe: editAboutMe.trim() } });
+  };
+
+  const handlePronounEditStart = () => {
+    setEditPronoun(data?.getUser?.pronoun || '');
+    setIsEditingPronoun(true);
+  };
+
+  const handlePronounEditCancel = () => {
+    setIsEditingPronoun(false);
+    setEditPronoun('');
+  };
+
+  const handlePronounEditSave = () => {
+    updateUser({ variables: { pronoun: editPronoun.trim() } });
   };
 
   const formatDate = (dateString: string) => {
@@ -293,13 +311,47 @@ export default function ProfileScreen() {
 
         <View style={styles.infoRow}>
           <View style={styles.infoIcon}>
-            <Calendar size={20} color={AppColors.primary} />
+            <User size={20} color={AppColors.primary} />
           </View>
           <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>Joined</Text>
-            <Text style={styles.infoValue}>
-              {user?.createdTime ? formatDate(user.createdTime) : '...'}
-            </Text>
+            <Text style={styles.infoLabel}>Pronoun</Text>
+            {isEditingPronoun ? (
+              <View style={styles.editRow}>
+                <TextInput
+                  style={styles.editInput}
+                  value={editPronoun}
+                  onChangeText={setEditPronoun}
+                  placeholder="e.g. she/her, he/him, they/them"
+                  placeholderTextColor={AppColors.placeholder}
+                  autoFocus
+                  editable={!updating}
+                />
+                <Pressable
+                  onPress={handlePronounEditSave}
+                  style={[styles.actionButton, styles.saveButton]}
+                  disabled={updating}
+                >
+                  {updating ? (
+                    <ActivityIndicator size="small" color={AppColors.white} />
+                  ) : (
+                    <Check size={18} color={AppColors.white} />
+                  )}
+                </Pressable>
+                <Pressable
+                  onPress={handlePronounEditCancel}
+                  style={[styles.actionButton, styles.cancelButton]}
+                  disabled={updating}
+                >
+                  <X size={18} color={AppColors.white} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={handlePronounEditStart}>
+                <Text style={user?.pronoun ? styles.infoValue : styles.infoPlaceholder}>
+                  {user?.pronoun || 'Not set'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
@@ -496,6 +548,10 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: FontSize.md,
     fontWeight: '500',
+  },
+  infoPlaceholder: {
+    fontSize: FontSize.md,
+    color: AppColors.placeholder,
   },
   editRow: {
     flexDirection: 'row',

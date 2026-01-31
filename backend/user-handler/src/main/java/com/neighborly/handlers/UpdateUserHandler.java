@@ -54,8 +54,9 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
         Map<String, Object> arguments = event.getArguments();
         String newUsername = (String) arguments.get("username");
         String newAboutMe = (String) arguments.get("aboutMe");
+        String newPronoun = (String) arguments.get("pronoun");
 
-        if ((newUsername == null || newUsername.trim().isEmpty()) && newAboutMe == null) {
+        if ((newUsername == null || newUsername.trim().isEmpty()) && newAboutMe == null && newPronoun == null) {
             throw new RuntimeException("At least one field must be provided for update");
         }
 
@@ -76,6 +77,12 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
             if (newAboutMe != null) {
                 updates.put("aboutMe", AttributeValueUpdate.builder()
                         .value(AttributeValue.builder().s(newAboutMe.trim()).build())
+                        .action(AttributeAction.PUT)
+                        .build());
+            }
+            if (newPronoun != null) {
+                updates.put("pronoun", AttributeValueUpdate.builder()
+                        .value(AttributeValue.builder().s(newPronoun.trim()).build())
                         .action(AttributeAction.PUT)
                         .build());
             }
@@ -116,6 +123,9 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
         }
         if (item.containsKey("aboutMe")) {
             user.setAboutMe(item.get("aboutMe").s());
+        }
+        if (item.containsKey("pronoun")) {
+            user.setPronoun(item.get("pronoun").s());
         }
         if (item.containsKey("createdTime")) {
             user.setCreatedTime(item.get("createdTime").s());
