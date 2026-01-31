@@ -6,10 +6,12 @@ import {
   RefreshControl,
   TextInput,
   Pressable,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client';
-import { User, Mail, FileText, Pencil, Check, X } from 'lucide-react-native';
+import { User, Mail, FileText, Camera, Pencil, Check, X } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 import { Text, View } from '@/components/Themed';
 import { Button } from '@/components/Button';
@@ -31,6 +33,7 @@ interface UserData {
   username: string | null;
   aboutMe: string | null;
   pronoun: string | null;
+  avatarUrl: string | null;
   joinedBuildings: string[] | null;
   createdTime: string;
 }
@@ -149,6 +152,29 @@ export default function ProfileScreen() {
     updateUser({ variables: { pronoun: editPronoun.trim() } });
   };
 
+  const handleAvatarPick = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      showToast('Permission to access photos is required', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const asset = result.assets[0];
+      const mimeType = asset.mimeType || 'image/jpeg';
+      const dataUri = `data:${mimeType};base64,${asset.base64}`;
+      updateUser({ variables: { avatarUrl: dataUri } });
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -227,11 +253,18 @@ export default function ProfileScreen() {
         lightColor={AppColors.white}
         darkColor={AppColors.darkCard}
       >
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <User size={48} color={AppColors.white} />
+        <Pressable onPress={handleAvatarPick} style={styles.avatarContainer}>
+          {user?.avatarUrl ? (
+            <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <User size={48} color={AppColors.white} />
+            </View>
+          )}
+          <View style={styles.avatarOverlay}>
+            <Camera size={16} color={AppColors.white} />
           </View>
-        </View>
+        </Pressable>
         <Text style={styles.username}>
           {user?.username || 'Neighbor'}
         </Text>
@@ -484,6 +517,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: Spacing.md,
+    position: 'relative',
   },
   avatar: {
     width: 96,
@@ -492,6 +526,24 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: AppColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: AppColors.white,
   },
   username: {
     fontSize: FontSize.xl,

@@ -55,8 +55,9 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
         String newUsername = (String) arguments.get("username");
         String newAboutMe = (String) arguments.get("aboutMe");
         String newPronoun = (String) arguments.get("pronoun");
+        String newAvatarUrl = (String) arguments.get("avatarUrl");
 
-        if ((newUsername == null || newUsername.trim().isEmpty()) && newAboutMe == null && newPronoun == null) {
+        if ((newUsername == null || newUsername.trim().isEmpty()) && newAboutMe == null && newPronoun == null && newAvatarUrl == null) {
             throw new RuntimeException("At least one field must be provided for update");
         }
 
@@ -83,6 +84,12 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
             if (newPronoun != null) {
                 updates.put("pronoun", AttributeValueUpdate.builder()
                         .value(AttributeValue.builder().s(newPronoun.trim()).build())
+                        .action(AttributeAction.PUT)
+                        .build());
+            }
+            if (newAvatarUrl != null) {
+                updates.put("avatarUrl", AttributeValueUpdate.builder()
+                        .value(AttributeValue.builder().s(newAvatarUrl).build())
                         .action(AttributeAction.PUT)
                         .build());
             }
@@ -126,6 +133,9 @@ public class UpdateUserHandler implements RequestHandler<AppSyncEvent, User> {
         }
         if (item.containsKey("pronoun")) {
             user.setPronoun(item.get("pronoun").s());
+        }
+        if (item.containsKey("avatarUrl")) {
+            user.setAvatarUrl(item.get("avatarUrl").s());
         }
         if (item.containsKey("createdTime")) {
             user.setCreatedTime(item.get("createdTime").s());
