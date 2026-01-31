@@ -28,7 +28,7 @@ export class MessagingDatabaseConstruct extends Construct {
 
     // Channels table - stores channels within each building
     this.channelsTable = new dynamodb.Table(this, 'ChannelsTable', {
-      tableName: `${config.resourcePrefix}-channels`,
+      tableName: `${config.fullResourcePrefix}-channels`,
       partitionKey: {
         name: 'buildingId',
         type: dynamodb.AttributeType.STRING,
@@ -44,7 +44,7 @@ export class MessagingDatabaseConstruct extends Construct {
 
     // Messages table - stores messages within each channel
     this.messagesTable = new dynamodb.Table(this, 'MessagesTable', {
-      tableName: `${config.resourcePrefix}-messages`,
+      tableName: `${config.fullResourcePrefix}-messages`,
       partitionKey: {
         name: 'channelId',
         type: dynamodb.AttributeType.STRING,
@@ -80,13 +80,13 @@ export class MessagingDatabaseConstruct extends Construct {
     new cdk.CfnOutput(this, 'ChannelsTableName', {
       value: this.channelsTable.tableName,
       description: 'DynamoDB Channels Table Name',
-      exportName: `${config.resourcePrefix}-channels-table`,
+      exportName: `${config.fullResourcePrefix}-channels-table`,
     });
 
     new cdk.CfnOutput(this, 'MessagesTableName', {
       value: this.messagesTable.tableName,
       description: 'DynamoDB Messages Table Name',
-      exportName: `${config.resourcePrefix}-messages-table`,
+      exportName: `${config.fullResourcePrefix}-messages-table`,
     });
   }
 }

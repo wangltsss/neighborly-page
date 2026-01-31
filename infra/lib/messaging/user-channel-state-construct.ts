@@ -29,7 +29,7 @@ export class UserChannelStateConstruct extends Construct {
 
     // UserChannelState table - tracks read state per user per channel
     this.table = new dynamodb.Table(this, 'UserChannelStateTable', {
-      tableName: `${config.resourcePrefix}-user-channel-state`,
+      tableName: `${config.fullResourcePrefix}-user-channel-state`,
       
       // Composite primary key: userId_channelId
       // Example: "user-123_channel-456"
@@ -63,7 +63,7 @@ export class UserChannelStateConstruct extends Construct {
     new cdk.CfnOutput(this, 'UserChannelStateTableName', {
       value: this.table.tableName,
       description: 'DynamoDB UserChannelState Table Name',
-      exportName: `${config.resourcePrefix}-user-channel-state-table`,
+      exportName: `${config.fullResourcePrefix}-user-channel-state-table`,
     });
   }
 }

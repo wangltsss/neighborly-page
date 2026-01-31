@@ -1,0 +1,20 @@
+## Function2 Request: Execute UpdateItem
+## Use stash values from Function1
+
+#set($buildingId = $ctx.stash.buildingId)
+#set($userId = $ctx.stash.userId)
+
+## Execute UpdateItem operation - Manual JSON construction to ensure validity
+{
+  "version": "2017-02-28",
+  "operation": "UpdateItem",
+  "key": {
+    "userId": { "S": "$userId" }
+  },
+  "update": {
+    "expression": "ADD joinedBuildings :buildingId",
+    "expressionValues": {
+      ":buildingId": { "SS": [ "$buildingId" ] }
+    }
+  }
+}

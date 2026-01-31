@@ -1,0 +1,44 @@
+## Function1 Response: Check duplicates and pass through
+## Handles both unpacked Set/List and raw DynamoDB JSON format
+
+#set($buildingId = $ctx.stash.buildingId)
+
+## Check if user exists (from GetItem)
+#if(!$ctx.result || !$ctx.result.userId)
+  $util.error("User not found.", "UserNotFound")
+#end
+
+## Robust duplicate check logic
+#set($isDuplicate = false)
+#set($joined = $ctx.result.joinedBuildings)
+
+#if($joined)
+  ## Case 1: AppSync unpacked it to a Java Collection (List/Set)
+  ## This is the standard behavior for VTL resolvers
+  #if($joined.contains && $joined.contains($buildingId))
+    #set($isDuplicate = true)
+  
+  ## Case 2: Raw DynamoDB JSON format with SS wrapper (fallback)
+  #elseif($joined.SS)
+    #foreach($bid in $joined.SS)
+      #if($bid == $buildingId)
+        #set($isDuplicate = true)
+      #end
+    #end
+    
+  ## Case 3: Iterate collection if .contains method missing (rare)
+  #else
+    #foreach($bid in $joined)
+      #if($bid == $buildingId)
+        #set($isDuplicate = true)
+      #end
+    #end
+  #end
+#end
+
+#if($isDuplicate)
+  $util.error("You are already a member of this building", "AlreadyJoined")
+#end
+
+## Pass through result to next function
+$util.toJson($ctx.result)

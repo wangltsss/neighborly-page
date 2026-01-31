@@ -63,3 +63,18 @@ export const GET_USERS_BY_IDS = gql`
     }
   }
 `;
+
+export const SEARCH_BUILDINGS = gql`
+  query SearchBuildings($city: String!, $state: String!, $addressFilter: String) {
+    searchBuildings(city: $city, state: $state, addressFilter: $addressFilter) {
+      buildingId
+      country
+      state
+      city
+      address
+      name
+      memberCount
+      createdTime
+    }
+  }
+`;
